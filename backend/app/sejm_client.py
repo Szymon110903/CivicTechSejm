@@ -2,7 +2,7 @@ import httpx
 import logging
 from typing import Optional, Any
 from .cache import LocalCache
-from .retry import retry_with_backoff, RetryConfig
+from .retry import retry_with_backoff
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,6 @@ class SejmAPIClient:
     def __init__(self, cache: Optional[LocalCache] = None):
         self.client = httpx.AsyncClient(base_url=self.BASE_URL, timeout=10)
         self.cache = cache or LocalCache(default_ttl=self.VOTE_CACHE_TTL)
-        self.retry_config = RetryConfig(max_retries=3, initial_delay=1.0)
     
     async def close(self):
         await self.client.aclose()

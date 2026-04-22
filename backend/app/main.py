@@ -159,6 +159,7 @@ async def get_interpellations(term: int = Query(10, description="Parliamentary t
 
 # ============== WRITTEN QUESTIONS ==============
 
+@app.get("/api/writtenquestions")
 @app.get("/api/writtenQuestions")
 async def get_written_questions(term: int = Query(10, description="Parliamentary term number")):
     """Get list of written questions"""

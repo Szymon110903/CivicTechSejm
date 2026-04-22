@@ -186,7 +186,7 @@ This implementation is:
 - ✅ **Efficient**: Reuses connections, minimal overhead
 - ✅ **Reliable**: Automatic retries, error handling
 - ✅ **Maintainable**: Clean code, no duplication
-- ✅ **Documented**: Full docs in docs.md
+- ✅ **Documented**: Endpoint docs available in FastAPI OpenAPI/Swagger
 - ✅ **Tested**: Works with Docker Compose
 
 ---
@@ -200,8 +200,7 @@ This implementation is:
 - ✅ `backend/app/retry.py` - Retry logic (90 lines)
 
 ### Documentation
-- ✅ `docs.md` - Complete API reference (350+ lines)
-- ✅ `plan.md` - Project status and notes
+- ✅ FastAPI OpenAPI docs (`/docs`) - API reference
 - ✅ This file - Completion report
 
 ---
@@ -231,7 +230,7 @@ This API is ready for:
 
 ## 📞 Support
 
-All endpoints documented in `docs.md` with:
+All endpoints are available in FastAPI docs (`/docs`) with:
 - Purpose of each endpoint
 - Parameters (required/optional)
 - Cache duration

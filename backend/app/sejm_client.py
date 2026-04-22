@@ -148,18 +148,19 @@ class SejmAPIClient:
         """Fetch votings data."""
         if sitting and num:
             cache_key = f"voting:term:{term}:sitting:{sitting}:num:{num}"
-            response = await self.client.get(f"/sejm/term{term}/votings/{sitting}/{num}")
+            path = f"/sejm/term{term}/votings/{sitting}/{num}"
         elif sitting:
             cache_key = f"votings:term:{term}:sitting:{sitting}"
-            response = await self.client.get(f"/sejm/term{term}/votings/{sitting}")
+            path = f"/sejm/term{term}/votings/{sitting}"
         else:
             cache_key = f"votings:term:{term}"
-            response = await self.client.get(f"/sejm/term{term}/votings")
+            path = f"/sejm/term{term}/votings"
         
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached
         
+        response = await self.client.get(path)
         response.raise_for_status()
         data = response.json()
         

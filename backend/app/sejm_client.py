@@ -6,6 +6,10 @@ from .retry import retry_with_backoff, RetryConfig
 
 logger = logging.getLogger(__name__)
 
+JSONDict = dict[str, Any]
+JSONList = list[JSONDict]
+JSONResponse = JSONDict | JSONList
+
 class SejmAPIClient:
     """Client for Polish Sejm API (https://api.sejm.gov.pl/)"""
     
@@ -24,7 +28,7 @@ class SejmAPIClient:
         await self.client.aclose()
     
     @retry_with_backoff()
-    async def get_mps(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_mps(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch list of MPs (Members of Parliament)."""
         cache_key = f"mps:term:{term}"
         
@@ -41,7 +45,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_mp(self, mp_id: str, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_mp(self, mp_id: str, term: int = DEFAULT_TERM) -> JSONDict:
         """Fetch details of a specific MP."""
         cache_key = f"mp:term:{term}:id:{mp_id}"
         
@@ -58,7 +62,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_bills(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_bills(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch list of bills."""
         cache_key = f"bills:term:{term}"
         
@@ -75,7 +79,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_clubs(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_clubs(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch list of clubs (parliamentary groups)."""
         cache_key = f"clubs:term:{term}"
         
@@ -92,7 +96,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_club(self, club_id: str, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_club(self, club_id: str, term: int = DEFAULT_TERM) -> JSONDict:
         """Fetch details of a specific club."""
         cache_key = f"club:term:{term}:id:{club_id}"
         
@@ -109,7 +113,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_committees(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_committees(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch list of committees."""
         cache_key = f"committees:term:{term}"
         
@@ -126,7 +130,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_committee(self, committee_code: str, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_committee(self, committee_code: str, term: int = DEFAULT_TERM) -> JSONDict:
         """Fetch details of a specific committee."""
         cache_key = f"committee:term:{term}:code:{committee_code}"
         
@@ -144,7 +148,7 @@ class SejmAPIClient:
     
     @retry_with_backoff()
     async def get_votings(self, term: int = DEFAULT_TERM, sitting: Optional[str] = None, 
-                         num: Optional[str] = None) -> dict[str, Any]:
+                         num: Optional[str] = None) -> JSONResponse:
         """Fetch votings data."""
         if sitting and num:
             cache_key = f"voting:term:{term}:sitting:{sitting}:num:{num}"
@@ -169,7 +173,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_proceedings(self, term: int = DEFAULT_TERM, proceeding_id: Optional[str] = None) -> dict[str, Any]:
+    async def get_proceedings(self, term: int = DEFAULT_TERM, proceeding_id: Optional[str] = None) -> JSONResponse:
         """Fetch proceedings (parliamentary sessions)."""
         if proceeding_id:
             cache_key = f"proceeding:term:{term}:id:{proceeding_id}"
@@ -191,7 +195,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_processes(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_processes(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch legislative processes."""
         cache_key = f"processes:term:{term}"
         
@@ -208,7 +212,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_interpellations(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_interpellations(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch interpellations."""
         cache_key = f"interpellations:term:{term}"
         
@@ -225,7 +229,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_written_questions(self, term: int = DEFAULT_TERM) -> dict[str, Any]:
+    async def get_written_questions(self, term: int = DEFAULT_TERM) -> JSONList:
         """Fetch written questions."""
         cache_key = f"written_questions:term:{term}"
         
@@ -242,7 +246,7 @@ class SejmAPIClient:
         return data
     
     @retry_with_backoff()
-    async def get_terms(self) -> dict[str, Any]:
+    async def get_terms(self) -> JSONList:
         """Fetch available Sejm terms."""
         cache_key = "terms"
         

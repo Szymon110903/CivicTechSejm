@@ -172,15 +172,16 @@ class SejmAPIClient:
         """Fetch proceedings (parliamentary sessions)."""
         if proceeding_id:
             cache_key = f"proceeding:term:{term}:id:{proceeding_id}"
-            response = await self.client.get(f"/sejm/term{term}/proceedings/{proceeding_id}")
+            path = f"/sejm/term{term}/proceedings/{proceeding_id}"
         else:
             cache_key = f"proceedings:term:{term}"
-            response = await self.client.get(f"/sejm/term{term}/proceedings")
+            path = f"/sejm/term{term}/proceedings"
         
         cached = self.cache.get(cache_key)
         if cached is not None:
             return cached
         
+        response = await self.client.get(path)
         response.raise_for_status()
         data = response.json()
         

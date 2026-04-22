@@ -1,6 +1,6 @@
-import time
+import asyncio
 import logging
-from typing import Callable, TypeVar, Any
+from typing import Callable, TypeVar, Awaitable
 from functools import wraps
 import httpx
 
@@ -53,14 +53,14 @@ def retry_with_backoff(config: RetryConfig = None):
     if config is None:
         config = RetryConfig()
     
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+    def decorator(func: Callable[..., Awaitable[T]]) -> Callable[..., Awaitable[T]]:
         @wraps(func)
-        def wrapper(*args, **kwargs) -> T:
+        async def wrapper(*args, **kwargs) -> T:
             last_exception = None
             
             for attempt in range(config.max_retries + 1):
                 try:
-                    result = func(*args, **kwargs)
+                    result = await func(*args, **kwargs)
                     if attempt > 0:
                         logger.info(f"{func.__name__} succeeded after {attempt} retries")
                     return result
@@ -80,7 +80,7 @@ def retry_with_backoff(config: RetryConfig = None):
                         f"{func.__name__} attempt {attempt + 1}/{config.max_retries + 1} failed, "
                         f"retrying in {delay:.2f}s... Error: {last_exception}"
                     )
-                    time.sleep(delay)
+                    await asyncio.sleep(delay)
             
             logger.error(f"{func.__name__} failed after {config.max_retries + 1} attempts")
             raise last_exception or Exception(f"{func.__name__} failed")

@@ -47,6 +47,7 @@ class Voting(Base):
     # Relationships
     day = relationship("VotingDay", back_populates="votings")
     club_results = relationship("ClubVotingResult", back_populates="voting", cascade="all, delete-orphan")
+    votes = relationship("Vote", back_populates="voting", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Voting day_id={self.day_id} num={self.voting_number} passed={self.passed}>"

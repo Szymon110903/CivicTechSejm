@@ -90,3 +90,19 @@ Proces importowania i strukturyzacji danych o głosowaniach przebiega następuj�
     *   Głosy poszczególnych posłów są grupowane według przynależności klubowej (np. KO, PiS, Lewica itp.).
     *   Wyliczane są statystyki klubowe (turnout, frekwencja, dominujący głos).
 5.  **Zapis Transakcyjny**: Dane są zapisywane w relacyjnej strukturze bazy danych w sposób idempotentny (ponowne wywołanie usuwa stare i zapisuje aktualne wersje rekordów bez powielania danych).
+
+---
+
+## 4. Architektura Testów Automatycznych
+
+W systemie zaimplementowano pełną architekturę testów automatycznych (jednostkowych i integracyjnych) zlokalizowanych w katalogu [backend/tests/](file:///d:/repozytoria/CivicTechSejm/backend/tests/). Testy te nie wymagają uruchomionego kontenera PostgreSQL ani połączenia sieciowego z API Sejmu.
+
+### Izolacja Bazy Danych
+Wszystkie testy korzystające z bazy danych są w pełni odizolowane i używają bazy danych **SQLite w pamięci** (`sqlite:///:memory:`).
+Aby testy były stabilne i poprawnie obsługiwały asynchroniczne zapytania w architekturze FastAPI, zastosowano następujące rozwiązania:
+*   **Wymuszenie SQLite dla testów**: Plik globalny [conftest.py](file:///d:/repozytoria/CivicTechSejm/backend/tests/conftest.py) ustawia zmienną środowiskową `DATABASE_URL` na `sqlite:///:memory:` na samym początku procesu uruchamiania testów.
+*   **StaticPool**: Do łączenia z SQLite wykorzystywana jest pula `StaticPool` (`from sqlalchemy.pool import StaticPool`). W SQLite baza danych `:memory:` istnieje tylko dopóki połączenie z nią jest otwarte. Użycie `StaticPool` gwarantuje, że to samo, pojedyncze połączenie jest współdzielone i utrzymywane pomiędzy wątkiem wykonującym testy a asynchronicznymi wątkami serwera FastAPI obsługującymi zapytania HTTP klienta testowego. Zapobiega to błędom `no such table`.
+
+### Mockowanie Zewnętrznych Integracji
+*   Testy jednostkowe klienta API Sejmu ([test_sejm_client.py](file:///d:/repozytoria/CivicTechSejm/backend/tests/test_sejm_client.py)) oraz endpointów FastAPI ([test_api_endpoints.py](file:///d:/repozytoria/CivicTechSejm/backend/tests/test_api_endpoints.py)) mockują wywołania sieciowe przy użyciu biblioteki `unittest.mock`.
+*   Mocki precyzyjnie symulują odpowiedzi z API Sejmu (zarówno sukcesy, jak i błędy statusu HTTP), weryfikując poprawność działania cache oraz logiki automatycznego ponawiania połączeń (`retry_with_backoff`).

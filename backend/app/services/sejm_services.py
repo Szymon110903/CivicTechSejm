@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, date
 from sqlalchemy.orm import Session
-from ..models import Proceeding, VotingDay, Voting, ClubVotingResult, VotingDecision
+from ..models import Proceeding, VotingDay, Voting, ClubVotingResult, VotingDecision, Vote, Politician
 from ..sejm_client import SejmAPIClient
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,9 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
     Returns import summary stats.
     """
     logger.info(f"Starting import of proceeding {proceeding_id} for term {term}")
+    
+    # Fetch all politician IDs currently in the database to do fast membership testing
+    existing_politician_ids = {p.id for p in db.query(Politician.id).all()}
     
     # 1. Fetch proceeding details to obtain dates
     try:
@@ -158,6 +161,7 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
                     club_votes[club] = []
                 club_votes[club].append(v)
                 
+            votes_to_add = []
             for club_id, member_votes in club_votes.items():
                 c_yes = 0
                 c_no = 0
@@ -188,6 +192,13 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
                         "vote": decision
                     })
                     
+                    if mp_id and int(mp_id) in existing_politician_ids:
+                        votes_to_add.append(Vote(
+                            voting_id=db_voting.id,
+                            politician_id=int(mp_id),
+                            vote=decision
+                        ))
+                    
                 total_party_members = c_yes + c_no + c_abstain + c_not_voted
                 club_res = ClubVotingResult(
                     voting_id=db_voting.id,
@@ -203,6 +214,8 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
                 club_res.calculate_participation()
                 db.add(club_res)
                 
+            if votes_to_add:
+                db.add_all(votes_to_add)
             db.commit()
             imported_count += 1
             logger.info(f"Successfully imported voting number {voting_number} of sitting {proceeding_id}")

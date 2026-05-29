@@ -2,10 +2,8 @@
 
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Index
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
-Base = declarative_base()
+from ..core.db import Base
 
 
 class VotingDay(Base):

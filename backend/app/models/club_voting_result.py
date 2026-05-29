@@ -2,11 +2,9 @@
 
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, JSON, Enum as SQLEnum
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from .enums import VotingDecision
-
-Base = declarative_base()
+from ..core.db import Base
 
 
 class ClubVotingResult(Base):

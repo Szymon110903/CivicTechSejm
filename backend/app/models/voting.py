@@ -2,10 +2,8 @@
 
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, DateTime, Date, ForeignKey, Boolean, Float, JSON, Index
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
-Base = declarative_base()
+from ..core.db import Base
 
 
 class Voting(Base):
@@ -49,6 +47,7 @@ class Voting(Base):
     # Relationships
     day = relationship("VotingDay", back_populates="votings")
     club_results = relationship("ClubVotingResult", back_populates="voting", cascade="all, delete-orphan")
+    votes = relationship("Vote", back_populates="voting", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<Voting day_id={self.day_id} num={self.voting_number} passed={self.passed}>"

@@ -180,3 +180,13 @@ Przechowuje informacje o konkretnych głosach poszczególnych posłów dla każd
 *   **Skalowalność**: Klucz główny `id` zdefiniowany jest jako `BIGINT` ze względu na docelowy rozmiar tabeli (setki tysięcy do milionów wierszy głosów poselskich).
 *   **Indeksy**: Pola `voting_id` oraz `politician_id` posiadają nałożone indeksy w celu szybkiego wyszukiwania głosów danego posła lub listy głosów dla konkretnego głosowania.
 *   **Unikalność**: Nałożono ograniczenie unikalności `uq_voting_politician` na parę `(voting_id, politician_id)`.
+
+### Dokumenty Ustaw (`bill_documents`)
+Przechowuje metadane i ścieżki do lokalnie zapisanych dokumentów powiązanych z projektami ustaw (druki sejmowe, uzasadnienia, OSR, itp.).
+*   Model SQLAlchemy: [BillDocument](file:///d:/repozytoria/CivicTechSejm/backend/app/models/document.py).
+*   **Archiwizacja**: Zawiera pole `local_path` do fizycznego lokalizowania pliku na dysku/w chmurze oraz `original_url` dla odnośnika do API Sejmu.
+
+### Audyt Pobrań (`document_download_audits`)
+Rejestr pobrań dokumentów ustaw przez użytkowników aplikacji.
+*   Model SQLAlchemy: [DocumentDownloadAudit](file:///d:/repozytoria/CivicTechSejm/backend/app/models/document.py).
+*   **Śledzenie**: Pozwala na zapisywanie logów pobrań w celu analiz i audytów systemowych.

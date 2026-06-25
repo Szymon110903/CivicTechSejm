@@ -115,3 +115,29 @@ class LegislativeMixin(BaseClient):
         self.cache.set(cache_key, data, self.DATA_CACHE_TTL)
         logger.info(f"Successfully fetched written questions for term {term}")
         return data
+
+    @retry_with_backoff()
+    async def get_print(self, num: str, term: int = BaseClient.DEFAULT_TERM) -> JSONDict:
+        """Fetch information about a specific print."""
+        cache_key = f"print:term:{term}:num:{num}"
+        
+        cached = self.cache.get(cache_key)
+        if cached is not None:
+            return cached
+            
+        response = await self.client.get(f"/sejm/term{term}/prints/{num}")
+        response.raise_for_status()
+        data = response.json()
+        
+        self.cache.set(cache_key, data, self.DATA_CACHE_TTL)
+        logger.info(f"Successfully fetched print {num} for term {term}")
+        return data
+
+    @retry_with_backoff()
+    async def download_print_attachment(self, num: str, attach_name: str, term: int = BaseClient.DEFAULT_TERM) -> bytes:
+        """Download a specific attachment for a print (returns raw bytes)."""
+        # We don't cache binary files in the basic LocalCache.
+        response = await self.client.get(f"/sejm/term{term}/prints/{num}/{attach_name}")
+        response.raise_for_status()
+        logger.info(f"Successfully downloaded attachment {attach_name} for print {num} (term {term})")
+        return response.content

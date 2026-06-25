@@ -13,6 +13,7 @@ from .committee import Committee
 from .bill import Bill
 from .analysis_result import AnalysisResult
 from .vote import Vote
+from .document import BillDocument, DocumentDownloadAudit
 
 __all__ = [
     "Proceeding",
@@ -26,4 +27,6 @@ __all__ = [
     "Bill",
     "AnalysisResult",
     "Vote",
+    "BillDocument",
+    "DocumentDownloadAudit",
 ]

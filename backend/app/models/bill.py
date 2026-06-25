@@ -26,6 +26,7 @@ class Bill(Base):
     
     # Relationships
     analyses = relationship("AnalysisResult", back_populates="bill", cascade="all, delete-orphan")
+    documents = relationship("BillDocument", back_populates="bill", cascade="all, delete-orphan")
     
     # Audit columns
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

@@ -123,6 +123,24 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+    BILL_DOCUMENTS {
+        int id PK
+        int bill_id FK
+        string filename
+        string original_url
+        string local_path
+        string format
+        int version
+        timestamp created_at
+        timestamp updated_at
+    }
+    DOCUMENT_DOWNLOAD_AUDITS {
+        int id PK
+        int document_id FK
+        timestamp downloaded_at
+        string client_ip
+        string user_agent
+    }
 
     PROCEEDINGS ||--o{ VOTING_DAYS : "zawiera"
     VOTING_DAYS ||--o{ VOTINGS : "zawiera"
@@ -131,6 +149,8 @@ erDiagram
     POLITICIANS ||--o{ VOTES : "oddaje"
     PARTIES ||--o{ POLITICIANS : "zrzesza"
     BILLS ||--o{ ANALYSIS_RESULTS : "ma wyniki analizy"
+    BILLS ||--o{ BILL_DOCUMENTS : "ma załączniki"
+    BILL_DOCUMENTS ||--o{ DOCUMENT_DOWNLOAD_AUDITS : "jest pobierany"
 ```
 
 ---
@@ -180,3 +200,13 @@ Przechowuje informacje o konkretnych głosach poszczególnych posłów dla każd
 *   **Skalowalność**: Klucz główny `id` zdefiniowany jest jako `BIGINT` ze względu na docelowy rozmiar tabeli (setki tysięcy do milionów wierszy głosów poselskich).
 *   **Indeksy**: Pola `voting_id` oraz `politician_id` posiadają nałożone indeksy w celu szybkiego wyszukiwania głosów danego posła lub listy głosów dla konkretnego głosowania.
 *   **Unikalność**: Nałożono ograniczenie unikalności `uq_voting_politician` na parę `(voting_id, politician_id)`.
+
+### Dokumenty Ustaw (`bill_documents`)
+Przechowuje metadane i ścieżki do lokalnie zapisanych dokumentów powiązanych z projektami ustaw (druki sejmowe, uzasadnienia, OSR, itp.).
+*   Model SQLAlchemy: [BillDocument](file:///d:/repozytoria/CivicTechSejm/backend/app/models/document.py).
+*   **Archiwizacja**: Zawiera pole `local_path` do fizycznego lokalizowania pliku na dysku/w chmurze oraz `original_url` dla odnośnika do API Sejmu.
+
+### Audyt Pobrań (`document_download_audits`)
+Rejestr pobrań dokumentów ustaw przez użytkowników aplikacji.
+*   Model SQLAlchemy: [DocumentDownloadAudit](file:///d:/repozytoria/CivicTechSejm/backend/app/models/document.py).
+*   **Śledzenie**: Pozwala na zapisywanie logów pobrań w celu analiz i audytów systemowych.

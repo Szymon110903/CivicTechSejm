@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .dependencies import get_sejm_client
-from .routers import mps, votings
+from .routers import mps, votings, documents
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +21,7 @@ app = FastAPI(title="CivicTechSejm", lifespan=lifespan)
 # Podpinamy moduły endpointów
 app.include_router(mps.router, prefix="/api")
 app.include_router(votings.router, prefix="/api")
+app.include_router(documents.router, prefix="/api")
 
 @app.get("/api/health")
 async def health():

@@ -123,6 +123,24 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+    BILL_DOCUMENTS {
+        int id PK
+        int bill_id FK
+        string filename
+        string original_url
+        string local_path
+        string format
+        int version
+        timestamp created_at
+        timestamp updated_at
+    }
+    DOCUMENT_DOWNLOAD_AUDITS {
+        int id PK
+        int document_id FK
+        timestamp downloaded_at
+        string client_ip
+        string user_agent
+    }
 
     PROCEEDINGS ||--o{ VOTING_DAYS : "zawiera"
     VOTING_DAYS ||--o{ VOTINGS : "zawiera"
@@ -131,6 +149,8 @@ erDiagram
     POLITICIANS ||--o{ VOTES : "oddaje"
     PARTIES ||--o{ POLITICIANS : "zrzesza"
     BILLS ||--o{ ANALYSIS_RESULTS : "ma wyniki analizy"
+    BILLS ||--o{ BILL_DOCUMENTS : "ma załączniki"
+    BILL_DOCUMENTS ||--o{ DOCUMENT_DOWNLOAD_AUDITS : "jest pobierany"
 ```
 
 ---

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import VotingList from './components/VotingList/VotingList'
 
 function App() {
   const [status, setStatus] = useState('Loading backend status...')
+  const [selectedVoting, setSelectedVoting] = useState(null)
 
   useEffect(() => {
     const fetchHealth = async () => {
@@ -13,7 +15,7 @@ function App() {
         }
 
         const data = await response.json()
-        setStatus(`${data.status}: ${data.message}`)
+        setStatus(data.message ? `${data.status}: ${data.message}` : data.status)
       } catch {
         setStatus('Backend unavailable. Start containers with Docker Compose.')
       }
@@ -22,12 +24,41 @@ function App() {
     fetchHealth()
   }, [])
 
+  const handleViewDetails = (voting) => {
+    setSelectedVoting(voting)
+    console.log("Viewing details for:", voting)
+  }
+
+  const handleBackToList = () => {
+    setSelectedVoting(null)
+  }
+
   return (
-    <main className="app">
-      <h1>CivicTechSejm</h1>
-      <p>Web app built with React + FastAPI.</p>
-      <p className="status">{status}</p>
-    </main>
+    <div className="app-container">
+      <header className="app-header">
+        <h1>CivicTechSejm</h1>
+        <p className="status-indicator">{status}</p>
+      </header>
+
+      <main className="app-main">
+        {selectedVoting ? (
+          <div className="voting-details-placeholder">
+            <button className="back-button" onClick={handleBackToList}>
+              &larr; Back to List
+            </button>
+            <h2>Voting Details</h2>
+            <p><strong>Title:</strong> {selectedVoting.title}</p>
+            <p><strong>Date:</strong> {selectedVoting.date}</p>
+            <p><strong>Outcome:</strong> {selectedVoting.results.passed ? 'Passed' : 'Failed'}</p>
+            <div className="placeholder-note">
+              <p>Full detailed bill info will be implemented in a future update.</p>
+            </div>
+          </div>
+        ) : (
+          <VotingList onViewDetails={handleViewDetails} />
+        )}
+      </main>
+    </div>
   )
 }
 

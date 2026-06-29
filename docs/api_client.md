@@ -6,7 +6,7 @@ Rozwiązuje on podstawowe problemy API sejmowego:
 *   Opóźnienia sieciowe i limitowanie żądań (zawiera system *Retry z backoffem* i lokalny wbudowany moduł *Cache*).
 *   Złożoność ścieżek URL (abstrahuje konkretne zapytania HTTP do metod asynchronicznych Pythona).
 
-## 🧩 Moduły Klienta i Reprezentacja Danych
+## Moduły Klienta i Reprezentacja Danych
 
 Klient został podzielony funkcjonalnie na tzw. Mixiny (moduły wstrzykiwane do bazowej klasy `BaseClient`).
 
@@ -43,6 +43,6 @@ Odpowiada za pobieranie i mapowanie setek tysięcy głosów.
     *   Konkretne informacje o zadanym głosowaniu (kto jak głosował).
 *   **Zwraca:** Wyniki w formacie gotowym do zasilenia naszej bazy danych (`Vote`, `VotingDay`, `Proceeding`).
 
-## ⚙️ Wbudowane Mechanizmy
+## Mechanizmy
 1.  **Cacheowanie:** Każde wywołanie metody klienta najpierw sprawdza `LocalCache`. Jeśli żądanie było wykonane niedawno (np. w ciągu ostatniej godziny dla głosowań), zapytanie sieciowe nie jest realizowane, co drastycznie oszczędza transfer i czas.
-2.  **Retry (ponawianie):** Dekorator `@retry_with_backoff()` automatycznie radzi sobie z chwilowymi problemami po stronie serwerów sejmowych, ponawiając odpytywanie ze stopniowo wzrastającym opóźnieniem.
+2.  **Ponawianie:** Dekorator `@retry_with_backoff()` automatycznie radzi sobie z chwilowymi problemami po stronie serwerów sejmowych, ponawiając odpytywanie ze stopniowo wzrastającym opóźnieniem.

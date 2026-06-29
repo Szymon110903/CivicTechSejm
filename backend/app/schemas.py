@@ -83,6 +83,27 @@ class ProceedingVotingsResponseDTO(BaseModel):
         from_attributes = True
 
 
+# ============= PAGINATED VOTINGS DTO =============
+
+class GlobalVotingDTO(VotingDTO):
+    """Voting DTO with global context (date, sitting, term)"""
+    id: int
+    date: str
+    sitting: str
+    term: int = Field(..., example=10)
+
+class PaginatedVotingsResponseDTO(BaseModel):
+    """Paginated list of votings"""
+    items: List[GlobalVotingDTO]
+    total: int
+    page: int
+    size: int
+    pages: int
+    
+    class Config:
+        from_attributes = True
+
+
 # ============= ERROR/SUCCESS RESPONSES =============
 
 class SuccessResponseDTO(BaseModel):

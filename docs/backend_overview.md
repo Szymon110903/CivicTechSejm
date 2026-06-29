@@ -1,16 +1,16 @@
 # Dokumentacja Architektury Backendu (CivicTechSejm)
 
-## 📌 Wstęp
+
 Backend aplikacji CivicTechSejm jest odpowiedzialny za agregację danych z oficjalnego API Sejmu RP, ich przetworzenie, przechowywanie we własnej bazie danych oraz wystawianie ustrukturyzowanych, zoptymalizowanych endpointów REST dla aplikacji klienckich (np. Frontendu w React).
 
-## 🏗️ Stos Technologiczny
+## Stos Technologiczny
 *   **Framework:** FastAPI (Python) - wybrany ze względu na wysoką wydajność, wsparcie dla programowania asynchronicznego (`asyncio`) oraz automatyczne generowanie dokumentacji OpenAPI (Swagger).
 *   **Baza Danych:** PostgreSQL - relacyjna baza danych o dużej stabilności, używana do składowania uporządkowanych danych parlamentarnych.
 *   **ORM:** SQLAlchemy - narzędzie do mapowania obiektowo-relacyjnego (Object-Relational Mapping).
 *   **Migracje:** Alembic - system do zarządzania wersjami schematu bazy danych.
 *   **Testy:** Pytest - framework do testów jednostkowych i integracyjnych (testy używają izolowanej bazy SQLite w pamięci).
 
-## 📂 Struktura Katalogów Backendu
+## Struktura Katalogów Backendu
 
 ```text
 backend/
@@ -30,7 +30,7 @@ backend/
 └── Dockerfile              # Definicja kontenera backendowego
 ```
 
-## 🔄 Przepływ Danych (Data Flow)
+## Przepływ Danych 
 
 1.  **Frontend** odpytuje endpoint wystawiony w `app/routers/` (np. pobranie szczegółów posiedzenia).
 2.  Zależnie od typu zapytania, system sprawdza, czy posiada dane w **Bazie Danych** (przez `app/models/`).

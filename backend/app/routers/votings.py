@@ -1,12 +1,93 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from ..dependencies import get_sejm_client, get_db
-from ..schemas import ProceedingVotingsResponseDTO, VotingDayDTO, VotingDTO, VotingResultsDTO, ClubVotingResultDTO, ClubVotingStatsDTO, SuccessResponseDTO, ErrorResponseDTO
+from ..schemas import (
+    ProceedingVotingsResponseDTO, VotingDayDTO, VotingDTO, VotingResultsDTO, 
+    ClubVotingResultDTO, ClubVotingStatsDTO, SuccessResponseDTO, ErrorResponseDTO,
+    PaginatedVotingsResponseDTO, GlobalVotingDTO
+)
 from ..services.sejm_services import import_proceeding_votings
-from ..models import Proceeding
+from ..models import Proceeding, Voting, VotingDay
 
 router = APIRouter(prefix="/votings", tags=["Votings"])
 
+@router.get("/", response_model=PaginatedVotingsResponseDTO)
+async def get_all_votings_endpoint(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve all votings across all proceedings with pagination,
+    ordered by newest first.
+    """
+    offset = (page - 1) * limit
+    
+    # Query total count
+    total = db.query(Voting).count()
+    
+    # Query items
+    votings = (
+        db.query(Voting)
+        .join(VotingDay, Voting.day_id == VotingDay.id)
+        .join(Proceeding, VotingDay.proceeding_id == Proceeding.id)
+        .order_by(desc(VotingDay.date), desc(Voting.voting_number))
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+    
+    items = []
+    for voting in votings:
+        club_results_dtos = []
+        sorted_club_results = sorted(voting.club_results, key=lambda cr: cr.club_id)
+        
+        for cr in sorted_club_results:
+            decision_val = cr.decision.value if hasattr(cr.decision, "value") else cr.decision
+            club_results_dtos.append(ClubVotingResultDTO(
+                club_id=cr.club_id,
+                decision=decision_val,
+                stats=ClubVotingStatsDTO(
+                    yes=cr.yes_count,
+                    no=cr.no_count,
+                    abstain=cr.abstain_count,
+                    not_voted=cr.not_voted_count
+                ),
+                participation_percent=cr.participation_percent
+            ))
+            
+        results_dto = VotingResultsDTO(
+            passed=voting.passed,
+            yes=voting.yes_count,
+            no=voting.no_count,
+            abstain=voting.abstain_count,
+            not_voted=voting.not_voted,
+            attendance=f"{int(voting.attendance_percent)}%"
+        )
+        
+        items.append(GlobalVotingDTO(
+            id=voting.id,
+            date=str(voting.day.date),
+            sitting=voting.sitting,
+            term=voting.day.proceeding.term,
+            voting_number=voting.voting_number,
+            title=voting.title or f"Głosowanie nr {voting.voting_number}",
+            description=voting.description,
+            topic=voting.topic,
+            results=results_dto,
+            club_results=club_results_dtos
+        ))
+        
+    pages = (total + limit - 1) // limit
+    
+    return PaginatedVotingsResponseDTO(
+        items=items,
+        total=total,
+        page=page,
+        size=limit,
+        pages=pages
+    )
 
 @router.post("/import", response_model=SuccessResponseDTO, responses={500: {"model": ErrorResponseDTO}})
 async def import_votings_endpoint(

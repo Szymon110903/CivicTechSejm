@@ -17,9 +17,17 @@ Endpointy dostarczające dane o parlamentarzystach.
 
 ### 2. Głosowania i Posiedzenia (`/api/votings`)
 Endpointy serwujące zagregowane dane o głosowaniach. Są to najważniejsze endpointy do rysowania wykresów (Civic Tech).
-*   *Zwracana główna struktura dla posiedzeń (ProceedingVotingsResponseDTO)* dzieli obrady na konkretne dni, a każdy dzień na zbiór głosowań.
-*   Pojedyncze głosowanie posiada już **wyliczone wyniki dla klubów** (`club_results` -> np. KO - `YES`, PiS - `NO`).
-*   **Zastosowanie:** Zasilanie wykresów kołowych, słupkowych i osi czasu na głównej stronie Frontendu bez obciążania przeglądarki wyliczaniem głosów z 460 posłów osobno.
+
+*   `GET /api/votings/`
+    *   **Zwraca:** Uproszczoną, paginowaną listę wszystkich głosowań ze wszystkich posiedzeń i dni (od najnowszych). Posiada parametry `page` i `limit`.
+    *   **Zastosowanie:** Budowa widoku chronologicznej, przeglądalnej listy wszystkich głosowań Sejmu z prostą paginacją.
+*   `GET /api/votings/proceedings/{proceeding_id}`
+    *   **Zwraca:** Struktura dla posiedzeń (ProceedingVotingsResponseDTO) dzieli obrady na konkretne dni, a każdy dzień na zbiór głosowań.
+    *   Pojedyncze głosowanie posiada już **wyliczone wyniki dla klubów** (`club_results` -> np. KO - `YES`, PiS - `NO`).
+    *   **Zastosowanie:** Zasilanie wykresów kołowych, słupkowych i osi czasu na głównej stronie Frontendu bez obciążania przeglądarki wyliczaniem głosów z 460 posłów osobno.
+*   `POST /api/votings/import`
+    *   **Zwraca:** Status pobrania i zaimportowania do bazy danych wyników głosowań z konkretnego posiedzenia (np. `?proceeding_id=60&term=10`).
+    *   **Zastosowanie:** Mechanizm wypełniania pustej bazy najnowszymi danymi prosto z API Sejmu.
 
 ### 3. Dokumenty Projektów i Ustaw (`/api/documents`)
 Endpointy pozwalające zarządzać plikami (np. pełnym tekstem ustawy, OSR, uzasadnieniem) w formatach PDF, HTML i innych.

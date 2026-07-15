@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .dependencies import get_sejm_client
-from .routers import mps, votings, documents
+from .routers import mps, votings, documents, proceedings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,6 +22,7 @@ app = FastAPI(title="CivicTechSejm", lifespan=lifespan)
 app.include_router(mps.router, prefix="/api")
 app.include_router(votings.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
+app.include_router(proceedings.router, prefix="/api")
 
 @app.get("/api/health")
 async def health():

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, Clock, Users } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import './Proceedings.css';
 
 const ProceedingCard = ({ proceeding }) => {
@@ -24,21 +25,12 @@ const ProceedingCard = ({ proceeding }) => {
           <Calendar size={16} className="detail-icon" />
           <span>{displayDate}</span>
         </div>
-        
-        {/* API doesn't always provide time easily in the list endpoint, we will mock it or just show 460 MPs for now */}
-        <div className="detail-item">
-          <Clock size={16} className="detail-icon" />
-          <span>Brak danych o godz.</span>
-        </div>
-        
-        <div className="detail-item">
-          <Users size={16} className="detail-icon" />
-          <span>460 Posłów</span>
-        </div>
       </div>
       
       <div className="proceeding-footer">
-        <button className="view-btn">Zobacz szczegóły</button>
+        <Link to={`/posiedzenia/${proceeding.number}`} className="view-btn" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+          Zobacz szczegóły
+        </Link>
       </div>
     </div>
   );

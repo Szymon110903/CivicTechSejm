@@ -1,0 +1,57 @@
+.proceeding-details-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.details-header {
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: var(--text-h);
+}
+
+.details-header h2 {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.details-subtitle {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.day-section {
+  margin-bottom: 3rem;
+}
+
+.day-header {
+  font-family: var(--heading);
+  font-size: 1.5rem;
+  color: var(--text-h);
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.proceeding-details-loading,
+.proceeding-details-error,
+.proceeding-details-empty {
+  padding: 2rem;
+  text-align: center;
+}
+
+.proceeding-details-error h3 {
+  color: #ef4444;
+  margin-top: 1rem;
+}

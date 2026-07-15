@@ -4,6 +4,7 @@ import './App.css'
 import Sidebar from './components/Layout/Sidebar'
 import VotingList from './components/VotingList/VotingList'
 import ProceedingsList from './components/Proceedings/ProceedingsList'
+import ProceedingDetails from './components/Proceedings/ProceedingDetails'
 
 function App() {
   const [status, setStatus] = useState('Loading backend status...')
@@ -38,6 +39,7 @@ function App() {
         <div className="content-area">
           <Routes>
             <Route path="/" element={<ProceedingsList />} />
+            <Route path="/posiedzenia/:id" element={<ProceedingDetails />} />
             <Route path="/glosowania" element={<VotingList />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

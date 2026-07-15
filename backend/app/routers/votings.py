@@ -119,18 +119,31 @@ async def import_votings_endpoint(
 async def get_proceeding_votings_endpoint(
     proceeding_id: str,
     term: int = 10,
+    client = Depends(get_sejm_client),
     db: Session = Depends(get_db)
 ):
     """
     Retrieve stored voting data for a given proceeding, 
     grouped by day, with detailed voting and club statistics.
+    If not found locally, attempts to import it from Sejm API on-the-fly.
     """
     proceeding = db.query(Proceeding).filter_by(term=term, proceeding_id=str(proceeding_id)).first()
     if not proceeding:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Proceeding {proceeding_id} for term {term} not found in database. Run the import first."
-        )
+        # Try to import on the fly
+        import_result = await import_proceeding_votings(db, client, term, proceeding_id)
+        if not import_result.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Proceeding {proceeding_id} for term {term} not found, and auto-import failed."
+            )
+            
+        # Refetch after import
+        proceeding = db.query(Proceeding).filter_by(term=term, proceeding_id=str(proceeding_id)).first()
+        if not proceeding:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Proceeding {proceeding_id} for term {term} imported but no data was stored (maybe sitting hasn't started yet)."
+            )
         
     days_dtos = []
     # Sort days by date to return chronological order

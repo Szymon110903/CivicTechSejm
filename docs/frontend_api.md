@@ -23,11 +23,18 @@ Endpointy serwujące zagregowane dane o głosowaniach. Są to najważniejsze end
     *   **Zastosowanie:** Budowa widoku chronologicznej, przeglądalnej listy wszystkich głosowań Sejmu z prostą paginacją.
 *   `GET /api/votings/proceedings/{proceeding_id}`
     *   **Zwraca:** Struktura dla posiedzeń (ProceedingVotingsResponseDTO) dzieli obrady na konkretne dni, a każdy dzień na zbiór głosowań.
+    *   **Sync:** Jeśli posiedzenia nie ma w bazie, endpoint **zablokuje odpowiedź na kilkanaście sekund**, pobierze dane z Sejm API w locie, zapisze w bazie i dopiero zwróci JSON. Frontend w tym czasie musi wyświetlać ekran ładowania.
     *   Pojedyncze głosowanie posiada już **wyliczone wyniki dla klubów** (`club_results` -> np. KO - `YES`, PiS - `NO`).
     *   **Zastosowanie:** Zasilanie wykresów kołowych, słupkowych i osi czasu na głównej stronie Frontendu bez obciążania przeglądarki wyliczaniem głosów z 460 posłów osobno.
 *   `POST /api/votings/import`
     *   **Zwraca:** Status pobrania i zaimportowania do bazy danych wyników głosowań z konkretnego posiedzenia (np. `?proceeding_id=60&term=10`).
-    *   **Zastosowanie:** Mechanizm wypełniania pustej bazy najnowszymi danymi prosto z API Sejmu.
+    *   **Zastosowanie:** Ręczny mechanizm wypełniania bazy. (Uwaga: ze względu na automatyzację w locie i w tle, to wywołanie jest obecnie rzadziej używane na froncie).
+
+### 2a. Przegląd Posiedzeń (`/api/proceedings`)
+Endpoint będący bezpośrednim proxy do API Sejmu.
+*   `GET /api/proceedings/`
+    *   **Zwraca:** Listę dostępnych posiedzeń Sejmu w aktualnej kadencji (zbuforowaną z `api.sejm.gov.pl`).
+    *   **Zastosowanie:** Główny widok kart ("Posiedzenia") na lewym panelu menu.
 
 ### 3. Dokumenty Projektów i Ustaw (`/api/documents`)
 Endpointy pozwalające zarządzać plikami (np. pełnym tekstem ustawy, OSR, uzasadnieniem) w formatach PDF, HTML i innych.

@@ -32,7 +32,15 @@ const ProceedingDetails = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="proceeding-details-loading"><div className="spinner"></div>Ładowanie szczegółów posiedzenia...</div>;
+    return (
+      <div className="proceeding-details-loading">
+        <div className="spinner"></div>
+        <h3>Ładowanie szczegółów posiedzenia...</h3>
+        <p style={{ opacity: 0.7, marginTop: '1rem', maxWidth: '400px', margin: '1rem auto' }}>
+          Jeśli otwierasz to posiedzenie po raz pierwszy, pobieramy właśnie tysiące głosów bezpośrednio z API Sejmu. Może to potrwać kilkanaście sekund.
+        </p>
+      </div>
+    );
   }
 
   if (error) {

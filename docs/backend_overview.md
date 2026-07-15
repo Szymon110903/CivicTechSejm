@@ -39,3 +39,8 @@ backend/
 5.  Wynik w formacie JSON trafia z powrotem na Frontend.
 
 Dzięki takiemu podziałowi warstw frontend nie komunikuje się bezpośrednio z wolnym i skomplikowanym API Sejmu. Cały ciężar pobierania, parsowania, cache'owania i odpytywania bazy spoczywa na FastAPI.
+
+## Zadania w Tle (Background Sync)
+
+Aby zachować bazę w aktualności, backend wykorzystuje `asyncio` do cyklicznego sprawdzania nowości bez obciążania zapytań klienckich. Przykładem jest:
+*   **Synchronizacja posiedzeń:** Raz na 24 godziny funkcja pobiera listę posiedzeń z Sejmu i auto-importuje te, których brakuje lokalnie (`app/services/background_tasks.py`). Mechanizm ten spina się bezpośrednio w cyklu życia (Lifespan) serwera FastAPI.

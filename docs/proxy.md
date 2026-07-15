@@ -31,8 +31,16 @@ Głównym powodem wprowadzenia endpointów takich jak `GET /api/proceedings/` na
 7. Router FastAPI zwraca dane jako JSON do Reacta.
 8. React renderuje listę kart (`ProceedingCard.jsx`).
 
+## Zjawisko Hybrydowej Synchronizacji
+
+Dla endpointów zwracających potężną ilość danych (jak szczegóły ze wszystkimi głosami danego posiedzenia: `/api/votings/proceedings/{id}`), zaimplementowaliśmy strategię 2-poziomową:
+
+1. **On-Demand Fetching (Pobieranie w Locie)**: Zamiast zwracać "404 Not Found" gdy użytkownik zażąda posiedzenia którego jeszcze nie mamy zescrapowanego, API usypia na kilkanaście sekund, wywołuje w tle `import_proceeding_votings`, a następnie serwuje świeże dane. 
+2. **Background Sync Task**: Jako wsparcie, backend uruchamia przy starcie cichy, asynchroniczny task, który co 24 godziny odpytuje serwery o braki w naszych rekordach i uzupełnia je w tle. Odciąża to pierwsze żądanie użytkownika.
+
 ## Gdzie szukać kodu?
 
-*   **Router Proxy (Backend)**: `backend/app/routers/proceedings.py`
+*   **Router Proxy (Backend)**: `backend/app/routers/proceedings.py` oraz `backend/app/routers/votings.py`
 *   **Klient komunikujący się z API Sejmu**: `backend/app/sejm_client/legislative.py`
-*   **Konsument na Frontendzie**: `frontend/src/components/Proceedings/ProceedingsList.jsx`
+*   **Zadania w tle**: `backend/app/services/background_tasks.py`
+*   **Konsument na Frontendzie**: `frontend/src/components/Proceedings/ProceedingsList.jsx` i `ProceedingDetails.jsx`

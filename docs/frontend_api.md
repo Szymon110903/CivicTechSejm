@@ -23,7 +23,7 @@ Endpointy serwujące zagregowane dane o głosowaniach. Są to najważniejsze end
     *   **Zastosowanie:** Budowa widoku chronologicznej, przeglądalnej listy wszystkich głosowań Sejmu z prostą paginacją.
 *   `GET /api/votings/proceedings/{proceeding_id}`
     *   **Zwraca:** Struktura dla posiedzeń (ProceedingVotingsResponseDTO) dzieli obrady na konkretne dni, a każdy dzień na zbiór głosowań.
-    *   **Nowość (Hybrydowy Sync):** Jeśli posiedzenia nie ma w bazie, endpoint **zablokuje odpowiedź na kilkanaście sekund**, pobierze dane z Sejm API w locie, zapisze w bazie i dopiero zwróci JSON. Frontend w tym czasie musi wyświetlać ekran ładowania.
+    *   **Sync:** Jeśli posiedzenia nie ma w bazie, endpoint **zablokuje odpowiedź na kilkanaście sekund**, pobierze dane z Sejm API w locie, zapisze w bazie i dopiero zwróci JSON. Frontend w tym czasie musi wyświetlać ekran ładowania.
     *   Pojedyncze głosowanie posiada już **wyliczone wyniki dla klubów** (`club_results` -> np. KO - `YES`, PiS - `NO`).
     *   **Zastosowanie:** Zasilanie wykresów kołowych, słupkowych i osi czasu na głównej stronie Frontendu bez obciążania przeglądarki wyliczaniem głosów z 460 posłów osobno.
 *   `POST /api/votings/import`

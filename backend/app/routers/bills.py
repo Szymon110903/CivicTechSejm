@@ -5,9 +5,9 @@ from ..core.db import get_db
 from ..services.document_service import DocumentService
 from ..models.document import BillDocument
 
-router = APIRouter(prefix="/documents", tags=["documents"])
+router = APIRouter(prefix="/bills", tags=["Bills"])
 
-@router.post("/bills/{bill_id}/sync")
+@router.post("/{bill_id}/documents/sync")
 async def sync_documents(bill_id: int, db: Session = Depends(get_db)):
     """
     Synchronizuje z Sejm API listę dostępnych załączników (dokumentów) dla danego projektu (Bill).
@@ -26,7 +26,7 @@ async def sync_documents(bill_id: int, db: Session = Depends(get_db)):
         ]
     }
 
-@router.get("/bills/{bill_id}")
+@router.get("/{bill_id}/documents")
 async def list_documents(bill_id: int, db: Session = Depends(get_db)):
     """
     Zwraca listę dokumentów powiązanych z projektem.
@@ -42,7 +42,7 @@ async def list_documents(bill_id: int, db: Session = Depends(get_db)):
         } for doc in docs
     ]
 
-@router.get("/{document_id}/download")
+@router.get("/documents/{document_id}/download")
 async def download_document(document_id: int, request: Request, db: Session = Depends(get_db)):
     """
     Zwraca sam plik (binarnie), pobierając go "on-demand" z API Sejmu (lub z lokalnego archiwum, jeśli już jest).

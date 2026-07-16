@@ -21,7 +21,7 @@ backend/
 │   ├── dependencies.py     # Zależności FastAPI (tzw. Dependency Injection)
 │   ├── main.py             # Główny plik wejściowy (inicjalizacja FastAPI)
 │   ├── models/             # Definicje tabel bazy danych (SQLAlchemy)
-│   ├── routers/            # Moduły wystawiające endpointy do Frontendu
+│   ├── routers/            # Moduły wystawiające endpointy do Frontendu (mps, votings, bills, committees, proceedings)
 │   ├── schemas.py          # Modele Pydantic (DTO - definiują format wejścia/wyjścia API)
 │   ├── sejm_client/        # Wewnętrzny klient odpytujący oficjalne API Sejmu
 │   └── services/           # Warstwa logiki biznesowej (np. pobieranie i zapis dokumentów)

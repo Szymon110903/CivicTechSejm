@@ -36,17 +36,24 @@ Endpoint będący bezpośrednim proxy do API Sejmu.
     *   **Zwraca:** Listę dostępnych posiedzeń Sejmu w aktualnej kadencji (zbuforowaną z `api.sejm.gov.pl`).
     *   **Zastosowanie:** Główny widok kart ("Posiedzenia") na lewym panelu menu.
 
-### 3. Dokumenty Projektów i Ustaw (`/api/documents`)
-Endpointy pozwalające zarządzać plikami (np. pełnym tekstem ustawy, OSR, uzasadnieniem) w formatach PDF, HTML i innych.
-*   `GET /api/documents/bills/{bill_id}`
+### 3. Dokumenty Projektów i Ustaw (`/api/bills`)
+Endpointy pozwalające zarządzać projektami oraz powiązanymi plikami (np. pełnym tekstem ustawy, OSR, uzasadnieniem) w formatach PDF, HTML i innych.
+*   `GET /api/bills/{bill_id}/documents`
     *   **Zwraca:** Listę dostępnych plików dokumentów dla zadanego projektu ustawy (ich identyfikatory, formaty oraz oryginalne linki URL).
     *   **Zastosowanie:** Rysowanie kafelków lub listy załączników do kliknięcia na profilu projektu.
-*   `POST /api/documents/bills/{bill_id}/sync`
+*   `POST /api/bills/{bill_id}/documents/sync`
     *   Wymusza zaktualizowanie z Sejm API listy załączników dla danego projektu (przydatne po dodaniu nowego projektu).
-*   `GET /api/documents/{document_id}/download`
+*   `GET /api/bills/documents/{document_id}/download`
     *   **Zwraca:** Plik binarny z odpowiednim typem MIME (np. `application/pdf`, `text/html`). Jeśli pliku nie było na lokalnym serwerze – backend pobiera go z serwerów Sejmu na żądanie (On-Demand) i zapisuje w archiwum, prowadząc przy okazji logi audytu.
     *   **Zastosowanie:** Ten adres URL frontend umieszcza np. w znaczniku `<a>` jako przycisk pobierania, w `<iframe src="...">` do podglądu dokumentu PDF bezpośrednio na podstronie ustawy.
 
-### 4. Healthcheck
+### 4. Komisje Sejmowe (`/api/committees`)
+Endpointy pozwalające na pobieranie danych o organach Sejmu.
+*   `GET /api/committees/`
+    *   **Zwraca:** Listę wszystkich komisji w obecnej kadencji.
+*   `GET /api/committees/{committee_code}`
+    *   **Zwraca:** Szczegóły dla danej komisji.
+
+### 5. Healthcheck
 *   `GET /api/health`
     *   Zwraca prosty status serwera `{"status": "ok"}`. Używany przez React do sprawdzenia, czy backend pomyślnie wystartował.

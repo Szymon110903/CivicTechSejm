@@ -1,7 +1,7 @@
 """Document (dokument projektu) model i logi pobierania"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship
 from ..core.db import Base
 
@@ -18,6 +18,7 @@ class BillDocument(Base):
     filename = Column(String(500), nullable=False)
     original_url = Column(String(1000), nullable=True)
     local_path = Column(String(1000), nullable=True)
+    file_content = Column(LargeBinary, nullable=True)
     format = Column(String(50), nullable=True)  # np. PDF, HTML, TXT
     version = Column(Integer, nullable=True, default=1)
     

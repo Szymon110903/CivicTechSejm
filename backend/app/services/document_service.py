@@ -62,7 +62,7 @@ class DocumentService:
         return synced_docs
 
     @staticmethod
-    async def get_or_download_document(db: Session, document_id: int, client_ip: str = None, user_agent: str = None) -> str:
+    async def get_or_download_document(db: Session, document_id: int, client_ip: str = None, user_agent: str = None) -> BillDocument:
         """
         Zwraca lokalną ścieżkę do pliku. Jeśli pliku nie ma, pobiera z API i archiwizuje na dysku.
         Zapisuje informację o pobraniu (audyt).
@@ -82,7 +82,7 @@ class DocumentService:
 
         # Sprawdzamy czy plik istnieje lokalnie
         if doc.local_path and os.path.exists(doc.local_path):
-            return doc.local_path
+            return doc
 
         # Pobieranie "on-demand" z API Sejmu
         bill = doc.bill
@@ -98,12 +98,13 @@ class DocumentService:
         os.makedirs(ARCHIVE_DIR, exist_ok=True)
         local_path = os.path.join(ARCHIVE_DIR, f"term{bill.term}_print{num}_{doc.filename}")
         
-        # Zapisujemy na dysk asynchronicznie
+        # Zapisujemy na dysk asynchronicznie (jako backup/cache)
         async with aiofiles.open(local_path, "wb") as f:
             await f.write(file_bytes)
 
-        # Aktualizujemy rekord w bazie o ścieżkę lokalną
+        # Aktualizujemy rekord w bazie o ścieżkę lokalną i sam plik (jako BLOB)
         doc.local_path = local_path
+        doc.file_content = file_bytes
         db.commit()
 
-        return local_path
+        return doc

@@ -51,6 +51,7 @@ class VotingResultsDTO(BaseModel):
 
 class VotingDTO(BaseModel):
     """Single voting DTO"""
+    id: int
     voting_number: int = Field(..., example=1)
     title: str = Field(..., example="Wniosek o odrzucenie projektu...")
     description: Optional[str] = None

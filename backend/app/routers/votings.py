@@ -8,7 +8,9 @@ from ..schemas import (
     PaginatedVotingsResponseDTO, GlobalVotingDTO
 )
 from ..services.sejm_services import import_proceeding_votings
-from ..models import Proceeding, Voting, VotingDay
+from ..services.document_service import DocumentService
+from ..models import Proceeding, Voting, VotingDay, Bill, BillDocument
+import re
 
 router = APIRouter(prefix="/votings", tags=["Votings"])
 
@@ -183,6 +185,7 @@ async def get_proceeding_votings_endpoint(
             )
             
             votings_dtos.append(VotingDTO(
+                id=voting.id,
                 voting_number=voting.voting_number,
                 title=voting.title,
                 description=voting.description,
@@ -201,4 +204,58 @@ async def get_proceeding_votings_endpoint(
         proceeding_id=proceeding.proceeding_id,
         last_updated=proceeding.last_updated,
         days=days_dtos
-    )
+@router.get("/{voting_id}/documents")
+async def get_voting_documents(
+    voting_id: int,
+    db: Session = Depends(get_db),
+    client = Depends(get_sejm_client)
+):
+    """
+    Znajduje dokumenty powiązane z głosowaniem.
+    Opiera się na wyciągnięciu numeru druku z tytułu lub tematu głosowania.
+    """
+    voting = db.query(Voting).filter(Voting.id == voting_id).first()
+    if not voting:
+        raise HTTPException(status_code=404, detail="Voting not found")
+
+    # Szukamy "druk nr X" lub "druki nr X, Y" w tytule lub opisie
+    text_to_search = (voting.title or "") + " " + (voting.topic or "") + " " + (voting.description or "")
+    match = re.search(r'druk[ui]?\s*(?:nr)?\s*(\d+)', text_to_search, re.IGNORECASE)
+    
+    if not match:
+        # Brak powiązanego druku w tytule
+        return []
+        
+    print_num = match.group(1)
+    term = voting.day.proceeding.term
+    
+    # Check if we have this bill in DB
+    bill = db.query(Bill).filter(Bill.term == term, Bill.print_number == print_num).first()
+    if not bill:
+        # Create a dummy bill to hold documents
+        try:
+            print_data = await client.get_print(term=term, num=print_num)
+            bill = Bill(
+                term=term,
+                print_number=print_num,
+                title=print_data.get("title", f"Druk nr {print_num}")
+            )
+            db.add(bill)
+            db.commit()
+            db.refresh(bill)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to fetch print from Sejm API: {str(e)}")
+
+    # Sync documents
+    synced = await DocumentService.sync_bill_documents(db, bill.id)
+    
+    # Return documents
+    return [
+        {
+            "id": doc.id,
+            "filename": doc.filename,
+            "format": doc.format,
+            "original_url": doc.original_url
+        } for doc in synced
+    ]
+

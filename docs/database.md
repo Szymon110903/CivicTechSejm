@@ -129,6 +129,7 @@ erDiagram
         string filename
         string original_url
         string local_path
+        binary file_content
         string format
         int version
         timestamp created_at
@@ -204,7 +205,8 @@ Przechowuje informacje o konkretnych głosach poszczególnych posłów dla każd
 ### Dokumenty Ustaw (`bill_documents`)
 Przechowuje metadane i ścieżki do lokalnie zapisanych dokumentów powiązanych z projektami ustaw (druki sejmowe, uzasadnienia, OSR, itp.).
 *   Model SQLAlchemy: [BillDocument](file:///d:/repozytoria/CivicTechSejm/backend/app/models/document.py).
-*   **Archiwizacja**: Zawiera pole `local_path` do fizycznego lokalizowania pliku na dysku/w chmurze oraz `original_url` dla odnośnika do API Sejmu.
+*   **Archiwizacja i BLOB**: Zawiera kolumnę `file_content` przechowującą binarny ładunek pobranego pliku PDF bezpośrednio w bazie (typu `LargeBinary`).
+*   Oprócz tego przechowuje `local_path` (jako backup lokalny) oraz `original_url` dla odnośnika do API Sejmu.
 
 ### Audyt Pobrań (`document_download_audits`)
 Rejestr pobrań dokumentów ustaw przez użytkowników aplikacji.

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 from ..core.db import get_db
 from ..services.document_service import DocumentService
@@ -45,19 +45,25 @@ async def list_documents(bill_id: int, db: Session = Depends(get_db)):
 @router.get("/documents/{document_id}/download")
 async def download_document(document_id: int, request: Request, db: Session = Depends(get_db)):
     """
-    Zwraca sam plik (binarnie), pobierając go "on-demand" z API Sejmu (lub z lokalnego archiwum, jeśli już jest).
+    Zwraca sam plik (binarnie), pobierając go "on-demand" z API Sejmu (lub z bazy/lokalnego archiwum).
     Odnotowuje ten fakt w audycie (logach pobrań).
     Frontend może wywołać ten endpoint w iframe albo <a href="..." target="_blank">, by pokazać PDF w przeglądarce.
     """
     client_ip = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     
-    local_path = await DocumentService.get_or_download_document(
+    doc = await DocumentService.get_or_download_document(
         db, document_id, client_ip=client_ip, user_agent=user_agent
     )
     
     # Określamy media_type na podstawie rozszerzenia
-    ext = local_path.split(".")[-1].lower() if "." in local_path else ""
+    ext = doc.filename.split(".")[-1].lower() if "." in doc.filename else ""
     media_type = "application/pdf" if ext == "pdf" else "text/html" if ext in ("html", "htm") else "application/octet-stream"
 
-    return FileResponse(path=local_path, media_type=media_type, filename=local_path.split("/")[-1])
+    if doc.file_content:
+        return Response(content=doc.file_content, media_type=media_type)
+    elif doc.local_path:
+        return FileResponse(path=doc.local_path, media_type=media_type, filename=doc.filename)
+    else:
+        raise HTTPException(status_code=404, detail="Document content not available")
+

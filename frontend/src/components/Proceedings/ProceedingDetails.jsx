@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import VotingCard from '../VotingList/VotingCard';
 import './ProceedingDetails.css';
 
 const ProceedingDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [proceedingData, setProceedingData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -90,7 +91,7 @@ const ProceedingDetails = () => {
                   <VotingCard
                     key={adaptedVoting.id}
                     voting={adaptedVoting}
-                    onClick={() => console.log('Clicked voting', voting.voting_number)}
+                    onClick={() => navigate(`/glosowania/${voting.id}`)}
                   />
                 );
               })}

@@ -26,6 +26,9 @@ Endpointy serwujące zagregowane dane o głosowaniach. Są to najważniejsze end
     *   **Sync:** Jeśli posiedzenia nie ma w bazie, endpoint **zablokuje odpowiedź na kilkanaście sekund**, pobierze dane z Sejm API w locie, zapisze w bazie i dopiero zwróci JSON. Frontend w tym czasie musi wyświetlać ekran ładowania.
     *   Pojedyncze głosowanie posiada już **wyliczone wyniki dla klubów** (`club_results` -> np. KO - `YES`, PiS - `NO`).
     *   **Zastosowanie:** Zasilanie wykresów kołowych, słupkowych i osi czasu na głównej stronie Frontendu bez obciążania przeglądarki wyliczaniem głosów z 460 posłów osobno.
+*   `GET /api/votings/{voting_id}/documents`
+    *   **Zwraca:** Zwraca listę dokumentów (plików w różnych formatach) powiązanych z danym głosowaniem (wymaga parsowania tytułów z bazy, aby znaleźć druk, pobiera z API Sejmu jeśli brakuje).
+    *   **Zastosowanie:** Wyświetlanie zakładek z powiązanymi plikami projektu na ekranie widoku pojedynczego głosowania.
 *   `POST /api/votings/import`
     *   **Zwraca:** Status pobrania i zaimportowania do bazy danych wyników głosowań z konkretnego posiedzenia (np. `?proceeding_id=60&term=10`).
     *   **Zastosowanie:** Ręczny mechanizm wypełniania bazy. (Uwaga: ze względu na automatyzację w locie i w tle, to wywołanie jest obecnie rzadziej używane na froncie).

@@ -114,6 +114,8 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
                 db.delete(existing_voting)
                 db.commit()
                 
+            import asyncio
+            await asyncio.sleep(1) # Rate limiting to prevent WAF bans
             # Fetch detailed voting data including votes
             details = await client.get_votings(term, sitting=proceeding_id, num=voting_number)
             if not details:

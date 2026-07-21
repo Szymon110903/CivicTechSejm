@@ -126,7 +126,8 @@ class LegislativeMixin(BaseClient):
             return cached
             
         response = await self.client.get(f"/sejm/term{term}/prints/{num}")
-        data = self._parse_response(response)
+        response.raise_for_status()
+        data = response.json()
         
         self.cache.set(cache_key, data, self.DATA_CACHE_TTL)
         logger.info(f"Successfully fetched print {num} for term {term}")

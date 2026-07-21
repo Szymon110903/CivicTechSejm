@@ -28,7 +28,8 @@ class VotingsMixin(BaseClient):
             return cached
         
         response = await self.client.get(path)
-        data = self._parse_response(response)
+        response.raise_for_status()
+        data = response.json()
         
         self.cache.set(cache_key, data, self.VOTE_CACHE_TTL)
         logger.info(f"Successfully fetched votings data for term {term}")

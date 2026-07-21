@@ -204,6 +204,8 @@ async def get_proceeding_votings_endpoint(
         proceeding_id=proceeding.proceeding_id,
         last_updated=proceeding.last_updated,
         days=days_dtos
+    )
+
 @router.get("/{voting_id}/documents")
 async def get_voting_documents(
     voting_id: int,

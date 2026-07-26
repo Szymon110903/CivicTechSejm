@@ -206,6 +206,56 @@ async def get_proceeding_votings_endpoint(
         days=days_dtos
     )
 
+@router.get("/{voting_id}", response_model=GlobalVotingDTO, responses={404: {"model": ErrorResponseDTO}})
+async def get_voting_by_id_endpoint(
+    voting_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve details of a single voting by its database ID.
+    """
+    voting = db.query(Voting).filter(Voting.id == voting_id).first()
+    if not voting:
+        raise HTTPException(status_code=404, detail="Voting not found")
+        
+    club_results_dtos = []
+    sorted_club_results = sorted(voting.club_results, key=lambda cr: cr.club_id)
+    for cr in sorted_club_results:
+        decision_val = cr.decision.value if hasattr(cr.decision, "value") else cr.decision
+        club_results_dtos.append(ClubVotingResultDTO(
+            club_id=cr.club_id,
+            decision=decision_val,
+            stats=ClubVotingStatsDTO(
+                yes=cr.yes_count,
+                no=cr.no_count,
+                abstain=cr.abstain_count,
+                not_voted=cr.not_voted_count
+            ),
+            participation_percent=cr.participation_percent
+        ))
+        
+    results_dto = VotingResultsDTO(
+        passed=voting.passed,
+        yes=voting.yes_count,
+        no=voting.no_count,
+        abstain=voting.abstain_count,
+        not_voted=voting.not_voted,
+        attendance=f"{int(voting.attendance_percent)}%"
+    )
+    
+    return GlobalVotingDTO(
+        id=voting.id,
+        date=str(voting.day.date),
+        sitting=voting.sitting,
+        term=voting.day.proceeding.term,
+        voting_number=voting.voting_number,
+        title=voting.title or f"Głosowanie nr {voting.voting_number}",
+        description=voting.description,
+        topic=voting.topic,
+        results=results_dto,
+        club_results=club_results_dtos
+    )
+
 @router.get("/{voting_id}/documents")
 async def get_voting_documents(
     voting_id: int,

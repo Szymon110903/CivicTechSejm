@@ -1,25 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import DocViewer, { DocViewerRenderers } from '@cyntler/react-doc-viewer';
-import '@cyntler/react-doc-viewer/dist/index.css';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import VotingDetailsView from './VotingDetailsView';
 import './VotingDetails.css';
 
 const VotingDetails = () => {
   const { id } = useParams();
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // If we navigated here with state (e.g. from VotingCard in VotingList), use that first
+  const [votingData, setVotingData] = useState(location.state?.voting || null);
+  const [loading, setLoading] = useState(!votingData);
   const [error, setError] = useState(null);
-  const [activeDocIndex, setActiveDocIndex] = useState(0);
 
   useEffect(() => {
-    const fetchDocuments = async () => {
+    // If we already have voting from state, no need to fetch metadata
+    if (votingData) return;
+
+    const fetchVotingById = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const response = await fetch(`/api/votings/${id}/documents`);
+        const response = await fetch(`/api/votings/${id}`);
         if (!response.ok) {
-          throw new Error('Błąd podczas pobierania dokumentów głosowania.');
+          throw new Error('Nie znaleziono szczegółów głosowania w bazie danych.');
         }
         const data = await response.json();
-        setDocuments(data);
+        setVotingData(data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -27,76 +34,41 @@ const VotingDetails = () => {
       }
     };
 
-    fetchDocuments();
-  }, [id]);
+    fetchVotingById();
+  }, [id, votingData]);
 
   if (loading) {
     return (
-      <div className="voting-details-loading">
+      <div className="voting-details-loading-page">
         <div className="spinner"></div>
-        <h3>Ładowanie dokumentów głosowania...</h3>
+        <h3>Ładowanie danych głosowania...</h3>
       </div>
     );
   }
 
-  if (error) {
+  if (error || !votingData) {
     return (
-      <div className="voting-details-error">
-        <Link to={-1} className="back-link">&larr; Wróć</Link>
+      <div className="voting-details-error-page">
+        <Link to="/glosowania" className="back-link">&larr; Wróć do listy głosowań</Link>
         <h3>Błąd</h3>
-        <p>{error}</p>
+        <p>{error || 'Nie znaleziono głosowania.'}</p>
       </div>
     );
   }
 
-  const docViewerDocs = documents.map(doc => ({
-    uri: `/api/bills/documents/${doc.id}/download`,
-    fileName: doc.filename
-  }));
-
+  // Render the unified, rich VotingDetailsView with the prominent X close button!
   return (
-    <div className="voting-details-container">
-      <div className="details-header">
-        <Link to={-1} className="back-link">&larr; Wróć do głosowań</Link>
-        <h2>Szczegóły Głosowania</h2>
-        <p className="details-subtitle">W przyszłości pojawią się tu szczegółowe statystyki oraz wizualizacje głosów.</p>
-      </div>
-
-      <div className="documents-section">
-        <h3>Najważniejsze dokumenty (Druki)</h3>
-        {documents.length === 0 ? (
-          <p className="no-docs">Nie znaleziono powiązanych druków dla tego głosowania.</p>
-        ) : (
-          <div className="document-viewer-layout">
-            <div className="document-tabs">
-              {documents.map((doc, index) => (
-                <button
-                  key={doc.id}
-                  className={`doc-tab ${index === activeDocIndex ? 'active' : ''}`}
-                  onClick={() => setActiveDocIndex(index)}
-                >
-                  {doc.filename}
-                </button>
-              ))}
-            </div>
-            
-            <div className="document-viewer-wrapper">
-              <DocViewer 
-                documents={[docViewerDocs[activeDocIndex]]} 
-                pluginRenderers={DocViewerRenderers}
-                style={{ height: "600px", borderRadius: "8px", border: "1px solid #ccc" }}
-                config={{
-                  header: {
-                    disableHeader: true,
-                    disableFileName: true,
-                    retainURLParams: false
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+    <div className="voting-details-route-container">
+      <VotingDetailsView 
+        voting={votingData} 
+        onClose={() => {
+          if (location.state?.fromProceeding) {
+            navigate(`/posiedzenia/${location.state.fromProceeding}`);
+          } else {
+            navigate(-1);
+          }
+        }} 
+      />
     </div>
   );
 };

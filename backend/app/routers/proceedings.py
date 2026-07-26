@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -29,11 +30,35 @@ async def get_proceedings_endpoint(
         )
         count_map = {str(proc_id): int(cnt) for proc_id, cnt in counts}
         
+        valid_proceedings = []
+        today_str = date.today().isoformat()
+        
         for proc in proceedings:
-            proc_num_str = str(proc.get("number", ""))
-            proc["votings_count"] = count_map.get(proc_num_str, 0)
+            proc_num = proc.get("number")
+            # Exclude proceedings with no number, number 0, or invalid numbers
+            if not proc_num or int(proc_num) <= 0:
+                continue
+                
+            title = str(proc.get("title", "")).lower()
+            if "planowane" in title:
+                continue
+                
+            dates = proc.get("dates", [])
+            # If the first date of the proceeding is strictly in the future, exclude it
+            if dates and str(dates[0]) > today_str:
+                continue
+                
+            proc_num_str = str(proc_num)
+            cnt = count_map.get(proc_num_str, 0)
+            proc["votings_count"] = cnt
             
-        return proceedings
+            # If start date is today or future AND zero votings, also exclude it
+            if dates and str(dates[0]) >= today_str and cnt == 0:
+                continue
+                
+            valid_proceedings.append(proc)
+            
+        return valid_proceedings
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

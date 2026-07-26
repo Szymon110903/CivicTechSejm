@@ -61,7 +61,13 @@ const VotingDetails = () => {
     <div className="voting-details-route-container">
       <VotingDetailsView 
         voting={votingData} 
-        onClose={() => navigate('/glosowania')} 
+        onClose={() => {
+          if (location.state?.fromProceeding) {
+            navigate(`/posiedzenia/${location.state.fromProceeding}`);
+          } else {
+            navigate(-1);
+          }
+        }} 
       />
     </div>
   );

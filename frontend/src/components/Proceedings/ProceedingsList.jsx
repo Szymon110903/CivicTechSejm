@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Calendar, Search, RefreshCw, AlertCircle, ChevronRight, CheckCircle2, XCircle, Maximize2, Minimize2 } from 'lucide-react';
-import VotingDetailsView from '../VotingList/VotingDetailsView';
+import { Calendar, Search, RefreshCw, AlertCircle, ChevronRight, CheckCircle2, XCircle, Maximize2, Minimize2 } from 'lucide-react';
 import './Proceedings.css';
 
 const ProceedingsList = () => {
@@ -21,9 +20,6 @@ const ProceedingsList = () => {
   // Cache fetched votings per proceeding number: { [procNum]: { loading: bool, error: str, data: object } }
   const [votingsCache, setVotingsCache] = useState({});
 
-  // Selected voting for the detail view/modal
-  const [selectedVoting, setSelectedVoting] = useState(null);
-
   // Fetch initial list of proceedings
   useEffect(() => {
     const fetchProceedings = async () => {
@@ -42,7 +38,7 @@ const ProceedingsList = () => {
           setExpandedProceedings(new Set([targetNum]));
           fetchVotingsForProceeding(targetNum);
         } else if (sortedData.length > 0 && !urlParamId) {
-          // Auto-expand the latest proceeding by default to make the page feel alive!
+          // Auto-expand the latest proceeding by default
           const latestNum = sortedData[0].number;
           setExpandedProceedings(new Set([latestNum]));
           fetchVotingsForProceeding(latestNum);
@@ -127,81 +123,86 @@ const ProceedingsList = () => {
 
   if (loading) {
     return (
-      <div className="proceedings-loading">
-        <div className="spinner"></div>
-        <h3>Ładowanie posiedzeń Sejmu...</h3>
+      <div className="container-fluid py-5 text-center">
+        <div className="spinner-border text-primary mb-3" role="status" style={{ width: "3rem", height: "3rem" }}></div>
+        <h3 className="h4 text-muted">Ładowanie posiedzeń Sejmu...</h3>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="proceedings-error">
-        <AlertCircle size={32} />
-        <h3>Błąd połączenia</h3>
-        <p>{error}</p>
-        <button className="retry-btn" onClick={() => window.location.reload()}>Spróbuj ponownie</button>
+      <div className="container-fluid py-5">
+        <div className="alert alert-danger text-center p-5 shadow-sm rounded-3 max-w-lg mx-auto">
+          <AlertCircle size={48} className="mb-3 text-danger" />
+          <h3 className="h4 fw-bold">Błąd połączenia</h3>
+          <p className="lead mb-4">{error}</p>
+          <button className="btn btn-danger px-4 py-2 fw-bold" onClick={() => window.location.reload()}>Spróbuj ponownie</button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="proceedings-container">
-      {/* Detail Modal / Overlay when a voting is clicked */}
-      {selectedVoting && (
-        <VotingDetailsView 
-          voting={selectedVoting.voting} 
-          context={{ sitting: selectedVoting.sitting, date: selectedVoting.date }}
-          onClose={() => setSelectedVoting(null)} 
-        />
-      )}
+    <div className="container-fluid py-3">
+      {/* Page Header & Search Bar Card */}
+      <div className="card shadow-sm mb-4 border-0 bg-light">
+        <div className="card-body p-4">
+          <div className="row align-items-center g-3">
+            <div className="col-lg-7">
+              <h2 className="h2 fw-bold text-dark mb-2">Posiedzenia Sejmu</h2>
+              <p className="text-secondary mb-0">
+                Rozwiń posiedzenie z listy poniżej, aby przeglądać poszczególne głosowania. Kliknięcie w głosowanie otworzy osobną stronę ze szczegółowymi wynikami oraz drukami sejmowymi.
+              </p>
+            </div>
 
-      {/* Page Header & Search Bar */}
-      <div className="proceedings-top-bar">
-        <div className="proceedings-title-area">
-          <h2>Posiedzenia Sejmu</h2>
-          <p className="proceedings-subtitle">
-            Rozwiń posiedzenie z listy poniżej, aby przeglądać poszczególne głosowania i zapoznać się ze szczegółowymi wynikami oraz drukami sejmowymi.
-          </p>
-        </div>
+            <div className="col-lg-5">
+              <div className="d-flex flex-column flex-sm-row gap-2 justify-content-lg-end">
+                <div className="input-group shadow-sm">
+                  <span className="input-group-text bg-white border-end-0 text-muted">
+                    <Search size={18} />
+                  </span>
+                  <input 
+                    type="text" 
+                    placeholder="Szukaj po numerze lub tytule..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="form-control border-start-0 ps-0"
+                  />
+                  {searchQuery && (
+                    <button className="btn btn-outline-secondary border-start-0" type="button" onClick={() => setSearchQuery('')}>&times;</button>
+                  )}
+                </div>
 
-        <div className="proceedings-actions">
-          <div className="search-input-wrapper">
-            <Search size={18} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Szukaj posiedzenia po numerze, dacie lub tytule..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="proceedings-search-input"
-            />
-            {searchQuery && (
-              <button className="clear-search-btn" onClick={() => setSearchQuery('')}>&times;</button>
-            )}
+                <button 
+                  className="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 fw-medium text-nowrap shadow-sm" 
+                  onClick={toggleAll} 
+                  title="Rozwiń lub zwiń wszystkie posiedzenia"
+                >
+                  {expandedProceedings.size === proceedings.length ? (
+                    <>
+                      <Minimize2 size={16} />
+                      <span>Zwiń wszystkie</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 size={16} />
+                      <span>Rozwiń wszystkie</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
-
-          <button className="toggle-all-btn" onClick={toggleAll} title="Rozwiń lub zwiń wszystkie posiedzenia">
-            {expandedProceedings.size === proceedings.length ? (
-              <>
-                <Minimize2 size={16} />
-                <span>Zwiń wszystkie</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 size={16} />
-                <span>Rozwiń wszystkie</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
       {/* Accordion List of Proceedings */}
-      <div className="proceedings-accordion-list">
+      <div className="accordion shadow-sm" id="proceedingsAccordion">
         {filteredProceedings.length === 0 ? (
-          <div className="no-results-box">
-            <AlertCircle size={28} />
-            <p>Nie znaleziono posiedzeń spełniających kryteria wyszukiwania.</p>
+          <div className="alert alert-warning text-center p-5 rounded-3 mb-0">
+            <AlertCircle size={32} className="mb-2" />
+            <p className="mb-0 fs-5">Nie znaleziono posiedzeń spełniających kryteria wyszukiwania.</p>
           </div>
         ) : (
           filteredProceedings.map((proceeding) => {
@@ -215,113 +216,116 @@ const ProceedingsList = () => {
             return (
               <div 
                 key={proceeding.number} 
-                className={`proceeding-accordion-item ${isExpanded ? 'expanded' : ''}`}
+                className="accordion-item border mb-3 rounded-3 overflow-hidden shadow-sm"
                 id={`proceeding-item-${proceeding.number}`}
               >
                 {/* Clickable Accordion Header */}
-                <div 
-                  className="proceeding-accordion-header" 
-                  onClick={() => toggleProceeding(proceeding.number)}
-                  role="button"
-                  aria-expanded={isExpanded}
-                >
-                  <div className="header-left">
-                    <span className="proceeding-number-pill">Posiedzenie nr {proceeding.number}</span>
-                    <span className="proceeding-date-badge">
-                      <Calendar size={15} />
-                      <span>{displayDate}</span>
-                    </span>
-                  </div>
-
-                  <div className="header-main-title">
-                    <h3>{proceeding.title}</h3>
-                  </div>
-
-                  <div className="header-right">
-                    <span className="expand-indicator">
-                      {isExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
-                    </span>
-                  </div>
-                </div>
+                <h2 className="accordion-header m-0" id={`heading-${proceeding.number}`}>
+                  <button 
+                    className={`accordion-button ${isExpanded ? '' : 'collapsed'} p-4 bg-white text-dark d-flex align-items-center flex-wrap gap-3`}
+                    type="button"
+                    onClick={() => toggleProceeding(proceeding.number)}
+                    aria-expanded={isExpanded}
+                  >
+                    <div className="d-flex align-items-center gap-3 flex-grow-1 flex-wrap me-2">
+                      <span className="badge bg-primary px-3 py-2 fs-6 shadow-sm">Posiedzenie nr {proceeding.number}</span>
+                      <span className="fw-bold fs-5 text-dark me-auto">{proceeding.title}</span>
+                      <span className="badge bg-light text-secondary border d-flex align-items-center gap-2 px-3 py-2 fs-6">
+                        <Calendar size={16} className="text-primary" />
+                        <span>{displayDate}</span>
+                      </span>
+                    </div>
+                  </button>
+                </h2>
 
                 {/* Expanded Accordion Body (List of Votings) */}
-                {isExpanded && (
-                  <div className="proceeding-accordion-content">
+                <div 
+                  id={`collapse-${proceeding.number}`} 
+                  className={`accordion-collapse collapse ${isExpanded ? 'show' : ''}`}
+                >
+                  <div className="accordion-body bg-light p-4 border-top">
                     {cacheEntry?.loading ? (
-                      <div className="accordion-loading-box">
-                        <div className="spinner-small"></div>
-                        <span>Pobieranie listy głosowań i wyników z archiwum Sejmu...</span>
+                      <div className="text-center p-5">
+                        <div className="spinner-border text-primary mb-3" role="status"></div>
+                        <p className="text-muted mb-0 fs-5">Pobieranie listy głosowań i wyników z archiwum Sejmu...</p>
                       </div>
                     ) : cacheEntry?.error ? (
-                      <div className="accordion-error-box">
-                        <AlertCircle size={20} />
-                        <span>{cacheEntry.error}</span>
+                      <div className="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-3 p-4 rounded-3 mb-0">
+                        <div className="d-flex align-items-center gap-2">
+                          <AlertCircle size={24} />
+                          <span className="fs-6">{cacheEntry.error}</span>
+                        </div>
                         <button 
-                          className="retry-small-btn" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fetchVotingsForProceeding(proceeding.number);
-                          }}
+                          className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 fw-bold" 
+                          onClick={() => fetchVotingsForProceeding(proceeding.number)}
                         >
-                          <RefreshCw size={14} /> Odśwież
+                          <RefreshCw size={16} /> Odśwież
                         </button>
                       </div>
                     ) : !cacheEntry?.data?.days || cacheEntry.data.days.length === 0 ? (
-                      <div className="accordion-empty-box">
-                        <p>Brak zarejestrowanych głosowań w systemie dla tego posiedzenia.</p>
+                      <div className="text-center p-5 bg-white rounded-3 border border-dashed">
+                        <p className="text-muted mb-0 fs-5">Brak zarejestrowanych głosowań w systemie dla tego posiedzenia.</p>
                       </div>
                     ) : (
-                      <div className="days-votings-wrapper">
+                      <div className="d-flex flex-column gap-4">
                         {cacheEntry.data.days.map((day) => (
                           <div key={day.date} className="day-votings-group">
-                            <div className="day-group-header">
-                              <span className="day-icon">📅</span>
-                              <span className="day-date-text">Głosowania z dnia: {day.date}</span>
-                              <span className="day-votings-count">({day.votings.length} głosowań)</span>
+                            <div className="d-flex align-items-center gap-2 pb-2 mb-3 border-bottom border-2">
+                              <span className="fs-5">📅</span>
+                              <h4 className="h5 fw-bold mb-0 text-dark">Głosowania z dnia: {day.date}</h4>
+                              <span className="badge bg-secondary rounded-pill ms-2">{day.votings.length} głosowań</span>
                             </div>
 
                             {/* List of Votings */}
-                            <div className="votings-interactive-list">
+                            <div className="list-group shadow-sm rounded-3 overflow-hidden">
                               {day.votings.map((voting) => (
-                                <div
+                                <button
+                                  type="button"
                                   key={voting.id || voting.voting_number}
-                                  className="voting-list-item"
-                                  onClick={() => setSelectedVoting({
-                                    voting,
-                                    sitting: proceeding.number,
-                                    date: day.date
+                                  className="list-group-item list-group-item-action p-3 p-md-4 d-flex justify-content-between align-items-center flex-wrap gap-3 border-bottom bg-white"
+                                  onClick={() => navigate(`/glosowania/${voting.id || voting.voting_number}`, {
+                                    state: {
+                                      voting,
+                                      sitting: proceeding.number,
+                                      date: day.date,
+                                      fromProceeding: proceeding.number
+                                    }
                                   })}
-                                  title="Kliknij, aby otworzyć szczegóły głosowania i druki"
+                                  title="Kliknij, aby otworzyć osobną stronę ze szczegółami i drukami"
                                 >
-                                  <div className="voting-item-num">
-                                    <span className="num-badge">#{voting.voting_number}</span>
-                                  </div>
-
-                                  <div className="voting-item-info">
-                                    <h4 className="voting-item-title">{voting.title}</h4>
-                                    {voting.topic && <span className="voting-item-topic">{voting.topic}</span>}
-                                  </div>
-
-                                  <div className="voting-item-outcome-area">
-                                    <div className="outcome-and-stats">
-                                      <span className={`outcome-pill ${voting.results?.passed ? 'passed' : 'failed'}`}>
-                                        {voting.results?.passed ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
-                                        <span>{voting.results?.passed ? 'UCHWALONO' : 'ODRZUCONO'}</span>
-                                      </span>
-
-                                      <span className="mini-stats-text">
-                                        Za: <strong className="yes-text">{voting.results?.yes || 0}</strong> &bull; 
-                                        Prz: <strong className="no-text">{voting.results?.no || 0}</strong> &bull; 
-                                        Wstrz: <strong className="abstain-text">{voting.results?.abstain || 0}</strong>
-                                      </span>
-                                    </div>
-
-                                    <div className="voting-item-action">
-                                      <span className="action-label">Szczegóły</span>
-                                      <ChevronRight size={18} className="arrow-icon" />
+                                  <div className="d-flex align-items-start gap-3 flex-grow-1 me-md-3">
+                                    <span className="badge bg-dark px-2 py-2 fs-6 font-monospace mt-1">#{voting.voting_number}</span>
+                                    <div>
+                                      <h5 className="mb-1 fw-bold text-dark fs-6">{voting.title}</h5>
+                                      {voting.topic && (
+                                        <span className="badge bg-light text-secondary border small mt-1 text-wrap text-start">
+                                          {voting.topic}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
-                                </div>
+
+                                  <div className="d-flex align-items-center justify-content-between justify-content-md-end gap-4 w-100 w-md-auto border-top border-md-top-0 pt-2 pt-md-0 mt-2 mt-md-0">
+                                    <div className="text-start text-md-end">
+                                      <div className="mb-1">
+                                        <span className={`badge ${voting.results?.passed ? 'bg-success' : 'bg-danger'} px-3 py-1 fs-6 shadow-sm`}>
+                                          {voting.results?.passed ? <CheckCircle2 size={14} className="me-1 d-inline" /> : <XCircle size={14} className="me-1 d-inline" />}
+                                          {voting.results?.passed ? 'UCHWALONO' : 'ODRZUCONO'}
+                                        </span>
+                                      </div>
+                                      <div className="small text-muted">
+                                        Za: <strong className="text-success">{voting.results?.yes || 0}</strong> &bull; 
+                                        Prz: <strong className="text-danger">{voting.results?.no || 0}</strong> &bull; 
+                                        Wstrz: <strong className="text-warning">{voting.results?.abstain || 0}</strong>
+                                      </div>
+                                    </div>
+
+                                    <div className="d-flex align-items-center gap-1 text-primary fw-bold small text-nowrap">
+                                      <span>Szczegóły</span>
+                                      <ChevronRight size={18} />
+                                    </div>
+                                  </div>
+                                </button>
                               ))}
                             </div>
                           </div>
@@ -329,7 +333,7 @@ const ProceedingsList = () => {
                       </div>
                     )}
                   </div>
-                )}
+                </div>
               </div>
             );
           })

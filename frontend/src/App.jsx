@@ -28,9 +28,9 @@ function App() {
   }, [])
 
   return (
-    <div className="app-layout">
+    <div className="app-layout bg-dark text-light">
       <Sidebar />
-      <main className="app-main">
+      <main className="app-main bg-dark text-light">
         <header className="app-header">
           <h1>CivicTechSejm</h1>
           <p className="status-indicator">{status}</p>

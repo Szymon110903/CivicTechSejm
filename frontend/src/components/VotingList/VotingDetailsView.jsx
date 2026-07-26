@@ -122,18 +122,18 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
   };
 
   return (
-    <div className="container-fluid py-3">
+    <div className="container-fluid py-3 text-light">
       {/* Top Navigation & Breadcrumb Card */}
-      <div className="card shadow-sm mb-4 border-0 bg-light">
+      <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary">
         <div className="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
           <div className="d-flex align-items-center flex-wrap gap-2">
             <span className="badge bg-primary px-3 py-2 fs-6 shadow-sm">Posiedzenie nr {sitting}</span>
             <span className="text-muted">&bull;</span>
-            <span className="text-secondary d-flex align-items-center gap-1">
-              <Calendar size={16} /> {formattedDate}
+            <span className="text-muted d-flex align-items-center gap-1">
+              <Calendar size={16} className="text-primary" /> {formattedDate}
             </span>
             <span className="text-muted">&bull;</span>
-            <span className="fw-bold text-dark fs-6">Głosowanie nr {voting_number}</span>
+            <span className="fw-bold text-light fs-6">Głosowanie nr {voting_number}</span>
           </div>
 
           <button 
@@ -148,25 +148,25 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
       </div>
 
       {/* Main Title & Topic Card */}
-      <div className="card shadow-sm mb-4 border-0">
+      <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary">
         <div className="card-body p-4">
-          <h1 className="h2 fw-bold mb-3 text-dark">{title || `Głosowanie nr ${voting_number}`}</h1>
+          <h1 className="h2 fw-bold mb-3 text-light">{title || `Głosowanie nr ${voting_number}`}</h1>
           {topic && <div className="badge bg-secondary mb-3 px-3 py-2 fs-6 text-wrap text-start">{topic}</div>}
-          {description && <p className="text-secondary fs-5 mb-0 lead">{description}</p>}
+          {description && <p className="text-muted fs-5 mb-0 lead">{description}</p>}
         </div>
       </div>
 
       {/* Outcome Banner & Visual Progress Bar Card */}
-      <div className="card shadow-sm mb-4 border-0">
+      <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary">
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
             <div className={`badge ${passed ? 'bg-success' : 'bg-danger'} d-flex align-items-center gap-2 px-4 py-3 fs-5 shadow-sm`}>
               {passed ? <CheckCircle2 size={24} /> : <XCircle size={24} />}
               <span>{passed ? 'UCHWALONO' : 'ODRZUCONO'}</span>
             </div>
-            <div className="d-flex align-items-center gap-2 bg-light px-3 py-2 rounded border text-secondary shadow-sm">
+            <div className="d-flex align-items-center gap-2 bg-body px-3 py-2 rounded border border-secondary text-light shadow-sm">
               <Users size={20} className="text-primary" />
-              <span>Frekwencja: <strong className="text-dark">{results?.attendance || 'N/A'}</strong></span>
+              <span>Frekwencja: <strong className="text-light">{results?.attendance || 'N/A'}</strong></span>
             </div>
           </div>
 
@@ -192,28 +192,28 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
           {/* Four Stat Boxes */}
           <div className="row g-3">
             <div className="col-6 col-md-3">
-              <div className="card border-success bg-light text-center p-3 shadow-sm h-100">
+              <div className="card border-success bg-body text-center p-3 shadow-sm h-100">
                 <span className="text-muted small fw-bold">ZA</span>
                 <span className="fs-2 fw-bold text-success my-1">{yesCount}</span>
                 <div><span className="badge bg-success">{yesPercent}%</span></div>
               </div>
             </div>
             <div className="col-6 col-md-3">
-              <div className="card border-danger bg-light text-center p-3 shadow-sm h-100">
+              <div className="card border-danger bg-body text-center p-3 shadow-sm h-100">
                 <span className="text-muted small fw-bold">PRZECIW</span>
                 <span className="fs-2 fw-bold text-danger my-1">{noCount}</span>
                 <div><span className="badge bg-danger">{noPercent}%</span></div>
               </div>
             </div>
             <div className="col-6 col-md-3">
-              <div className="card border-warning bg-light text-center p-3 shadow-sm h-100">
+              <div className="card border-warning bg-body text-center p-3 shadow-sm h-100">
                 <span className="text-muted small fw-bold">WSTRZYMAŁO SIĘ</span>
                 <span className="fs-2 fw-bold text-warning my-1">{abstainCount}</span>
                 <div><span className="badge bg-warning text-dark">{abstainPercent}%</span></div>
               </div>
             </div>
             <div className="col-6 col-md-3">
-              <div className="card border-secondary bg-light text-center p-3 shadow-sm h-100">
+              <div className="card border-secondary bg-body text-center p-3 shadow-sm h-100">
                 <span className="text-muted small fw-bold">NIE GŁOSOWAŁO</span>
                 <span className="fs-2 fw-bold text-secondary my-1">{notVotedCount}</span>
                 <div><span className="badge bg-secondary">-</span></div>
@@ -225,9 +225,9 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
 
       {/* Party Decisions Section */}
       {club_results && club_results.length > 0 && (
-        <div className="card shadow-sm mb-4 border-0">
-          <div className="card-header bg-white p-4 border-bottom">
-            <h3 className="h4 fw-bold mb-0 d-flex align-items-center gap-2 text-dark">
+        <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary">
+          <div className="card-header bg-body p-4 border-bottom border-secondary">
+            <h3 className="h4 fw-bold mb-0 d-flex align-items-center gap-2 text-light">
               <ShieldCheck size={24} className="text-primary" />
               Decyzje klubów i kół parlamentarnych
             </h3>
@@ -236,13 +236,13 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 g-3">
               {club_results.map((cr) => (
                 <div className="col" key={cr.club_id}>
-                  <div className={`card h-100 shadow-sm border-0 border-start border-4 ${getBorderClass(cr.decision)}`}>
+                  <div className={`card h-100 shadow-sm bg-body border-0 border-start border-4 ${getBorderClass(cr.decision)}`}>
                     <div className="card-body d-flex flex-column justify-content-between p-3">
                       <div className="d-flex justify-content-between align-items-center mb-3">
-                        <span className="fw-bold fs-5 text-dark">{cr.club_id}</span>
+                        <span className="fw-bold fs-5 text-light">{cr.club_id}</span>
                         {getDecisionBadge(cr.decision)}
                       </div>
-                      <div className="d-flex justify-content-between small text-muted border-top pt-2 mt-auto">
+                      <div className="d-flex justify-content-between small text-muted border-top border-secondary pt-2 mt-auto">
                         <span className="text-success fw-bold">Za: {cr.stats?.yes || 0}</span>
                         <span className="text-danger fw-bold">Prz: {cr.stats?.no || 0}</span>
                         <span className="text-warning fw-bold">Wstrz: {cr.stats?.abstain || 0}</span>
@@ -257,37 +257,37 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
       )}
 
       {/* Documents Section (Druki sejmowe) */}
-      <div className="card shadow-sm mb-4 border-0">
-        <div className="card-header bg-white p-4 border-bottom">
-          <h3 className="h4 fw-bold mb-0 d-flex align-items-center gap-2 text-dark">
+      <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary">
+        <div className="card-header bg-body p-4 border-bottom border-secondary">
+          <h3 className="h4 fw-bold mb-0 d-flex align-items-center gap-2 text-light">
             <FileText size={24} className="text-primary" />
             Powiązane druki i dokumenty
           </h3>
         </div>
         <div className="card-body p-4">
           {loadingDocs ? (
-            <div className="text-center p-5 bg-light rounded-3 border border-dashed">
+            <div className="text-center p-5 bg-body rounded-3 border border-secondary border-dashed">
               <div className="spinner-border text-primary mb-3" role="status"></div>
               <p className="text-muted mb-0">Wyszukiwanie i pobieranie druków z archiwum Sejmu...</p>
             </div>
           ) : docError ? (
-            <div className="alert alert-danger d-flex align-items-center gap-2 p-4 rounded-3 mb-0">
+            <div className="alert alert-danger d-flex align-items-center gap-2 p-4 rounded-3 mb-0 border border-danger">
               <AlertCircle size={20} />
               <span>{docError}</span>
             </div>
           ) : documents.length === 0 ? (
-            <div className="text-center p-5 bg-light rounded-3 border border-dashed">
+            <div className="text-center p-5 bg-body rounded-3 border border-secondary border-dashed">
               <FileText size={36} className="text-muted mb-2" />
               <p className="text-muted mb-0 fs-5">Nie znaleziono powiązanych druków dla tego głosowania.</p>
             </div>
           ) : (
             <div>
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 bg-light p-2 rounded-top border border-bottom-0">
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 bg-body p-2 rounded-top border border-secondary border-bottom-0">
                 <ul className="nav nav-pills gap-2">
                   {documents.map((doc, index) => (
                     <li className="nav-item" key={doc.id}>
                       <button
-                        className={`nav-link d-flex align-items-center gap-2 py-2 px-3 fw-medium ${index === activeDocIndex ? 'active shadow-sm' : 'text-dark'}`}
+                        className={`nav-link d-flex align-items-center gap-2 py-2 px-3 fw-medium ${index === activeDocIndex ? 'active shadow-sm' : 'text-light'}`}
                         onClick={() => setActiveDocIndex(index)}
                       >
                         <FileText size={16} />
@@ -309,7 +309,7 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
                 )}
               </div>
 
-              <div className="border rounded-bottom overflow-hidden bg-white">
+              <div className="border border-secondary rounded-bottom overflow-hidden bg-white">
                 <DocViewer 
                   documents={[docViewerDocs[activeDocIndex]]} 
                   pluginRenderers={DocViewerRenderers}

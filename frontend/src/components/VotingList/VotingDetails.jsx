@@ -49,7 +49,7 @@ const VotingDetails = () => {
   if (error || !votingData) {
     return (
       <div className="voting-details-error-page">
-        <Link to="/glosowania" className="back-link">&larr; Wróć do listy głosowań</Link>
+        <Link to="/" className="back-link">&larr; Wróć do listy posiedzeń</Link>
         <h3>Błąd</h3>
         <p>{error || 'Nie znaleziono głosowania.'}</p>
       </div>

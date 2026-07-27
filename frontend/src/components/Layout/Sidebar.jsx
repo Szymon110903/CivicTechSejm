@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, Users, FileText } from 'lucide-react';
+import { Calendar, Users, FileText, Briefcase } from 'lucide-react';
 import './Sidebar.css';
 
 const Sidebar = () => {
@@ -17,9 +17,9 @@ const Sidebar = () => {
           <span className="link-text">Posiedzenia</span>
         </NavLink>
         
-        <NavLink to="/glosowania" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard className="link-icon" size={20} />
-          <span className="link-text">Głosowania</span>
+        <NavLink to="/kluby" className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}>
+          <Briefcase className="link-icon" size={20} />
+          <span className="link-text">Kluby i Partie</span>
         </NavLink>
         
         {/* Placeholders for future tabs */}

@@ -56,6 +56,8 @@ W ramach rozwoju modułu statystyk klubowych (`/api/clubs`) wdrożono zaawansowa
 4. **Kaskadowa obsługa filtrów analitycznych**:
    Przekazywane przez frontend filtry (np. suwak minimalnej frekwencji `min_attendance`, przedział czasowy `date_from`/`date_to`, głosowania stykowe `close_votings_only`) są normalizowane i procesowane na poziomie warstwy Proxy zoptymalizowanym zapytaniem w SQLAlchemy (`filter_votings_query`), zapewniając spójność danych w każdym podwidoku panelu klubowego.
 
+> **Uwaga**: Pełna dokumentacja matematyczna, metodologiczna i algorytmiczna wskaźników analitycznych (kohezja, zgodność, indeks buntowników) znajduje się w dedykowanym pliku [club_analytics.md](file:///d:/repos/CivicTechSejm/docs/club_analytics.md).
+
 ## Gdzie szukać kodu?
 
 *   **Router Proxy i Analityka Klubowa (Backend)**: `backend/app/routers/proceedings.py`, `backend/app/routers/votings.py` oraz `backend/app/routers/clubs.py`

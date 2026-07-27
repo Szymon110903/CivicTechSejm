@@ -78,7 +78,8 @@ def filter_votings_query(
     date_to: Optional[date] = None,
     close_votings_only: bool = False,
     topic: Optional[str] = None,
-    sitting: Optional[str] = None
+    sitting: Optional[str] = None,
+    min_attendance: Optional[float] = None
 ):
     query = db.query(Voting).join(VotingDay, Voting.day_id == VotingDay.id)
     
@@ -101,6 +102,8 @@ def filter_votings_query(
             ((Voting.yes_count - Voting.no_count) < 15) &
             ((Voting.no_count - Voting.yes_count) < 15)
         )
+    if min_attendance and min_attendance > 0:
+        query = query.filter(Voting.attendance_percent >= min_attendance)
         
     return query.order_by(desc(VotingDay.date), desc(Voting.voting_number))
 
@@ -114,6 +117,8 @@ async def get_all_clubs_stats(
     close_votings_only: bool = Query(False, description="Filter only close/contested votings (<15 diff)"),
     topic: Optional[str] = Query(None, description="Topic/title search filter"),
     sitting: Optional[str] = Query(None, description="Sitting number filter"),
+    min_attendance: Optional[float] = Query(None, description="Minimum attendance filter"),
+    active_only: bool = Query(True, description="Filter only currently active MPs and clubs"),
     db: Session = Depends(get_db),
     client: SejmAPIClient = Depends(get_sejm_client)
 ):
@@ -122,13 +127,13 @@ async def get_all_clubs_stats(
     cohesion scores, attendance, and majority support, filtered by date/topic.
     """
     response.headers["Cache-Control"] = "public, max-age=300"
-    cache_key = f"all_clubs:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cache_key = f"all_clubs:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{min_attendance}:{active_only}"
     cached = analytics_cache.get(cache_key)
     if cached is not None:
         return cached
 
     active_mp_ids, current_club_counts = await get_active_mps_info(client)
-    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
+    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting, min_attendance).all()
     
     club_stats: Dict[str, Dict[str, Any]] = {}
     
@@ -168,6 +173,13 @@ async def get_all_clubs_stats(
                 
     result: List[ClubSummaryDTO] = []
     for cid, data in club_stats.items():
+        if active_only and current_club_counts:
+            m_count = current_club_counts.get(cid, 0)
+            if m_count == 0:
+                continue
+        else:
+            m_count = data["latest_members_count"]
+            
         tv = data["total_votings"]
         avg_att = round(data["sum_attendance"] / tv, 1) if tv > 0 else 0.0
         avg_coh = round(data["sum_cohesion"] / tv, 1) if tv > 0 else 0.0
@@ -176,7 +188,7 @@ async def get_all_clubs_stats(
         result.append(ClubSummaryDTO(
             club_id=cid,
             name=data["name"],
-            members_count=current_club_counts.get(cid, data["latest_members_count"]),
+            members_count=m_count,
             avg_attendance=avg_att,
             avg_cohesion=avg_coh,
             total_votings=tv,
@@ -198,24 +210,30 @@ async def get_agreement_matrix(
     close_votings_only: bool = Query(False),
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    min_attendance: Optional[float] = Query(None),
+    active_only: bool = Query(True),
+    db: Session = Depends(get_db),
+    client: SejmAPIClient = Depends(get_sejm_client)
 ):
     """
     Calculate the NxN agreement matrix between all clubs for the filtered votings.
     Returns percentage of votings where two clubs voted identically.
     """
     response.headers["Cache-Control"] = "public, max-age=300"
-    cache_key = f"matrix:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cache_key = f"matrix:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{min_attendance}:{active_only}"
     cached = analytics_cache.get(cache_key)
     if cached is not None:
         return cached
 
-    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
+    active_ids, current_club_counts = await get_active_mps_info(client)
+    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting, min_attendance).all()
     
     # Identify all active clubs in these votings
     active_clubs_set = set()
     for v in votings:
         for cr in v.club_results:
+            if active_only and current_club_counts and current_club_counts.get(cr.club_id, 0) == 0:
+                continue
             active_clubs_set.add(cr.club_id)
             
     clubs_list = sorted(list(active_clubs_set))
@@ -285,7 +303,9 @@ async def compare_clubs(
     close_votings_only: bool = Query(False),
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
+    min_attendance: Optional[float] = Query(None),
     limit: int = Query(50, ge=1, le=200, description="Max history items to return"),
+    active_only: bool = Query(True),
     db: Session = Depends(get_db),
     client: SejmAPIClient = Depends(get_sejm_client)
 ):
@@ -298,13 +318,13 @@ async def compare_clubs(
         
     response.headers["Cache-Control"] = "public, max-age=300"
     clubs_key = ",".join(sorted(clubs))
-    cache_key = f"compare:{clubs_key}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{limit}"
+    cache_key = f"compare:{clubs_key}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{min_attendance}:{limit}:{active_only}"
     cached = analytics_cache.get(cache_key)
     if cached is not None:
         return cached
 
     # Get summary stats for each requested club
-    all_summaries = await get_all_clubs_stats(response, date_from, date_to, close_votings_only, topic, sitting, db, client)
+    all_summaries = await get_all_clubs_stats(response, date_from, date_to, close_votings_only, topic, sitting, min_attendance, active_only, db, client)
     summary_map = {s.club_id: s for s in all_summaries}
     
     selected_summaries = []
@@ -376,20 +396,24 @@ async def filter_votings_by_behavior(
     close_votings_only: bool = Query(False),
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
+    min_attendance: Optional[float] = Query(None),
     limit: int = Query(50, ge=1, le=100),
-    db: Session = Depends(get_db)
+    active_only: bool = Query(True),
+    db: Session = Depends(get_db),
+    client: SejmAPIClient = Depends(get_sejm_client)
 ):
     """
     Behavioral search engine: find votings where a specific club voted in a certain way
     or where club cohesion was below/above a specified threshold.
     """
     response.headers["Cache-Control"] = "public, max-age=300"
-    cache_key = f"filter:{club_id}:{decision}:{max_cohesion}:{min_cohesion}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{limit}"
+    cache_key = f"filter:{club_id}:{decision}:{max_cohesion}:{min_cohesion}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{min_attendance}:{limit}:{active_only}"
     cached = analytics_cache.get(cache_key)
     if cached is not None:
         return cached
 
-    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).limit(limit * 2).all()
+    active_ids, current_club_counts = await get_active_mps_info(client)
+    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting, min_attendance).limit(limit * 2).all()
     
     results: List[ClubBehaviorFilterResultDTO] = []
     
@@ -400,6 +424,8 @@ async def filter_votings_by_behavior(
         
         for cr in v.club_results:
             cid = cr.club_id
+            if active_only and current_club_counts and current_club_counts.get(cid, 0) == 0:
+                continue
             dec_str = cr.decision.value if hasattr(cr.decision, "value") else str(cr.decision)
             decisions_map[cid] = dec_str
             
@@ -445,6 +471,8 @@ async def get_club_detailed_stats(
     close_votings_only: bool = Query(False),
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
+    min_attendance: Optional[float] = Query(None),
+    active_only: bool = Query(True),
     db: Session = Depends(get_db),
     client: SejmAPIClient = Depends(get_sejm_client)
 ):
@@ -453,13 +481,13 @@ async def get_club_detailed_stats(
     including historical trend points and Rebel MPs / Top Absentees index.
     """
     response.headers["Cache-Control"] = "public, max-age=300"
-    cache_key = f"club_detail:{club_id}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cache_key = f"club_detail:{club_id}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{min_attendance}:{active_only}"
     cached = analytics_cache.get(cache_key)
     if cached is not None:
         return cached
 
     active_mp_ids, current_club_counts = await get_active_mps_info(client)
-    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
+    votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting, min_attendance).all()
     
     total_votings = 0
     sum_attendance = 0.0
@@ -536,7 +564,7 @@ async def get_club_detailed_stats(
     # Build Rebel MPs list
     rebels_list: List[RebelMpDTO] = []
     for mpt in mp_tracker.values():
-        if active_mp_ids and mpt["mp_id"] not in active_mp_ids:
+        if active_only and active_mp_ids and mpt["mp_id"] not in active_mp_ids:
             continue
         t = mpt["total"]
         if t == 0:
@@ -563,10 +591,15 @@ async def get_club_detailed_stats(
     # Sort for absentees top 10
     top_absentees = sorted([r for r in rebels_list if r.absent_votes_count > 0], key=lambda x: (x.absent_votes_count, x.absent_rate_percent), reverse=True)[:10]
     
+    if active_only and current_club_counts:
+        m_count = current_club_counts.get(club_id, 0)
+    else:
+        m_count = latest_members_count
+
     result_dto = ClubDetailedStatsDTO(
         club_id=club_id,
         name=get_club_name(db, club_id),
-        members_count=current_club_counts.get(club_id, latest_members_count),
+        members_count=m_count,
         avg_attendance=avg_att,
         avg_cohesion=avg_coh,
         majority_support_percent=maj_sup,

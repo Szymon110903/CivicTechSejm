@@ -14,10 +14,11 @@ const ClubsOverview = ({ appliedFilters, onSelectClub }) => {
 
       try {
         const queryParams = new URLSearchParams({ term: '10' });
-        if (appliedFilters.fromDate) queryParams.append('from_date', appliedFilters.fromDate);
-        if (appliedFilters.toDate) queryParams.append('to_date', appliedFilters.toDate);
+        if (appliedFilters.fromDate) queryParams.append('date_from', appliedFilters.fromDate);
+        if (appliedFilters.toDate) queryParams.append('date_to', appliedFilters.toDate);
         if (appliedFilters.minAttendance > 0) queryParams.append('min_attendance', String(appliedFilters.minAttendance));
         if (appliedFilters.closeVotingsOnly) queryParams.append('close_votings_only', 'true');
+        if (appliedFilters.activeOnly !== undefined) queryParams.append('active_only', appliedFilters.activeOnly ? 'true' : 'false');
 
         const response = await fetch(`/api/clubs?${queryParams.toString()}`);
         if (!response.ok) {

@@ -21,7 +21,8 @@ const ClubBehaviorSearch = ({ appliedFilters }) => {
   useEffect(() => {
     const fetchClubsList = async () => {
       try {
-        const response = await fetch('/api/clubs?term=10');
+        const activeOnlyParam = appliedFilters.activeOnly !== undefined ? (appliedFilters.activeOnly ? 'true' : 'false') : 'true';
+        const response = await fetch(`/api/clubs?term=10&active_only=${activeOnlyParam}`);
         if (response.ok) {
           const list = await response.json();
           setAvailableClubs(list);
@@ -31,7 +32,7 @@ const ClubBehaviorSearch = ({ appliedFilters }) => {
       }
     };
     fetchClubsList();
-  }, []);
+  }, [appliedFilters.activeOnly]);
 
   const [searchTrigger, setSearchTrigger] = useState(0);
 
@@ -59,7 +60,9 @@ const ClubBehaviorSearch = ({ appliedFilters }) => {
         // Inherit global filters
         if (appliedFilters.fromDate) queryParams.append('date_from', appliedFilters.fromDate);
         if (appliedFilters.toDate) queryParams.append('date_to', appliedFilters.toDate);
+        if (appliedFilters.minAttendance > 0) queryParams.append('min_attendance', String(appliedFilters.minAttendance));
         if (appliedFilters.closeVotingsOnly) queryParams.append('close_votings_only', 'true');
+        if (appliedFilters.activeOnly !== undefined) queryParams.append('active_only', appliedFilters.activeOnly ? 'true' : 'false');
 
         const response = await fetch(`/api/clubs/filter?${queryParams.toString()}`);
         if (!response.ok) {

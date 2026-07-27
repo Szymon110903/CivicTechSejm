@@ -12,7 +12,8 @@ import {
   Percent, 
   Zap, 
   X,
-  Sliders
+  Sliders,
+  Users
 } from 'lucide-react';
 import './ClubsDashboard.css';
 import ClubsOverview from './ClubsOverview';
@@ -31,13 +32,15 @@ const ClubsDashboard = () => {
   const [toDate, setToDate] = useState('');
   const [minAttendance, setMinAttendance] = useState(0);
   const [closeVotingsOnly, setCloseVotingsOnly] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(true);
 
   // Applied filters state (passed to analytical views in Steps 4 & 5)
   const [appliedFilters, setAppliedFilters] = useState({
     fromDate: '',
     toDate: '',
     minAttendance: 0,
-    closeVotingsOnly: false
+    closeVotingsOnly: false,
+    activeOnly: true
   });
 
   // Handle Quick Date Selection
@@ -62,7 +65,8 @@ const ClubsDashboard = () => {
       fromDate,
       toDate,
       minAttendance: Number(minAttendance),
-      closeVotingsOnly
+      closeVotingsOnly,
+      activeOnly
     });
   };
 
@@ -72,22 +76,28 @@ const ClubsDashboard = () => {
     setToDate('');
     setMinAttendance(0);
     setCloseVotingsOnly(false);
+    setActiveOnly(true);
     setAppliedFilters({
       fromDate: '',
       toDate: '',
       minAttendance: 0,
-      closeVotingsOnly: false
+      closeVotingsOnly: false,
+      activeOnly: true
     });
   };
 
   // Remove single active filter badge
   const removeFilter = (key) => {
-    const updated = { ...appliedFilters, [key]: key === 'closeVotingsOnly' ? false : (key === 'minAttendance' ? 0 : '') };
+    const updated = { 
+      ...appliedFilters, 
+      [key]: key === 'closeVotingsOnly' ? false : (key === 'minAttendance' ? 0 : (key === 'activeOnly' ? true : '')) 
+    };
     setAppliedFilters(updated);
     if (key === 'fromDate') setFromDate('');
     if (key === 'toDate') setToDate('');
     if (key === 'minAttendance') setMinAttendance(0);
     if (key === 'closeVotingsOnly') setCloseVotingsOnly(false);
+    if (key === 'activeOnly') setActiveOnly(true);
   };
 
   // Check if any filter is currently applied
@@ -95,7 +105,8 @@ const ClubsDashboard = () => {
     appliedFilters.fromDate || 
     appliedFilters.toDate || 
     appliedFilters.minAttendance > 0 || 
-    appliedFilters.closeVotingsOnly
+    appliedFilters.closeVotingsOnly ||
+    appliedFilters.activeOnly === false
   );
 
   // Tab definitions
@@ -168,7 +179,7 @@ const ClubsDashboard = () => {
         <div className="card-body py-3">
           <form onSubmit={handleApplyFilters} className="row g-3 align-items-end">
             {/* Przedział Dat */}
-            <div className="col-12 col-md-6 col-xl-4">
+            <div className="col-12 col-md-6 col-xl-3">
               <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-1">
                 <Calendar size={14} /> Przedział czasowy
               </label>
@@ -197,10 +208,10 @@ const ClubsDashboard = () => {
             </div>
 
             {/* Minimalna Frekwencja */}
-            <div className="col-12 col-md-6 col-xl-3">
+            <div className="col-12 col-md-6 col-xl-2">
               <div className="d-flex justify-content-between align-items-center mb-1">
                 <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-0">
-                  <Percent size={14} /> Min. Frekwencja w Głosowaniu
+                  <Percent size={14} /> Min. Frekwencja
                 </label>
                 <span className="badge bg-info text-dark font-monospace">{minAttendance}%</span>
               </div>
@@ -215,9 +226,9 @@ const ClubsDashboard = () => {
                 aria-label="Suwak minimalnej frekwencji"
               />
               <div className="d-flex justify-content-between text-muted" style={{ fontSize: '0.7rem' }}>
-                <span>0% (Dowolna)</span>
-                <span>50% (Kworum)</span>
-                <span>100% (Pełna)</span>
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
               </div>
             </div>
 
@@ -238,6 +249,29 @@ const ClubsDashboard = () => {
                     id="closeVotingsSwitch"
                     checked={closeVotingsOnly} 
                     onChange={(e) => setCloseVotingsOnly(e.target.checked)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Zakres Posłów / Mandatów */}
+            <div className="col-12 col-md-6 col-xl-2">
+              <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-1">
+                <Users size={14} /> Zakres posłów
+              </label>
+              <div className="card bg-secondary bg-opacity-25 border-secondary p-2">
+                <div className="form-check form-switch mb-0 d-flex align-items-center justify-content-between ps-0" title="Gdy włączone, uwzględnia tylko 460 aktualnych posłów. Gdy wyłączone, uwzględnia wszystkich z kadencji (np. wygasłe mandaty).">
+                  <label className="form-check-label text-light small mb-0 pe-2" htmlFor="activeOnlySwitch" style={{ cursor: 'pointer' }}>
+                    Tylko aktualni (460)
+                  </label>
+                  <input 
+                    className="form-check-input ms-0 float-none" 
+                    type="checkbox" 
+                    role="switch" 
+                    id="activeOnlySwitch"
+                    checked={activeOnly} 
+                    onChange={(e) => setActiveOnly(e.target.checked)}
                     style={{ cursor: 'pointer' }}
                   />
                 </div>
@@ -279,6 +313,12 @@ const ClubsDashboard = () => {
                 <span className="badge bg-secondary d-inline-flex align-items-center gap-1 py-1 px-2">
                   Tylko stykowe głosowania
                   <button type="button" onClick={() => removeFilter('closeVotingsOnly')} className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} aria-label="Usuń filtr stykowe głosowania"></button>
+                </span>
+              )}
+              {appliedFilters.activeOnly === false && (
+                <span className="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2">
+                  Wszyscy posłowie w kadencji (z historycznymi)
+                  <button type="button" onClick={() => removeFilter('activeOnly')} className="btn-close" style={{ fontSize: '0.5rem' }} aria-label="Przełącz na tylko aktualnych posłów"></button>
                 </span>
               )}
             </div>

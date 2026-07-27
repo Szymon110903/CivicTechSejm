@@ -23,7 +23,8 @@ const ClubDetailRebels = ({ appliedFilters, initialClubId }) => {
   useEffect(() => {
     const fetchClubsList = async () => {
       try {
-        const response = await fetch('/api/clubs?term=10');
+        const activeOnlyParam = appliedFilters.activeOnly !== undefined ? (appliedFilters.activeOnly ? 'true' : 'false') : 'true';
+        const response = await fetch(`/api/clubs?term=10&active_only=${activeOnlyParam}`);
         if (response.ok) {
           const list = await response.json();
           setClubsList(list);
@@ -34,7 +35,7 @@ const ClubDetailRebels = ({ appliedFilters, initialClubId }) => {
       }
     };
     fetchClubsList();
-  }, [initialClubId]);
+  }, [initialClubId, appliedFilters.activeOnly]);
 
   // 2. Fetch detailed stats and rebels for selectedClubId
   useEffect(() => {
@@ -46,8 +47,11 @@ const ClubDetailRebels = ({ appliedFilters, initialClubId }) => {
 
       try {
         const queryParams = new URLSearchParams({ term: '10' });
-        if (appliedFilters.fromDate) queryParams.append('from_date', appliedFilters.fromDate);
-        if (appliedFilters.toDate) queryParams.append('to_date', appliedFilters.toDate);
+        if (appliedFilters.fromDate) queryParams.append('date_from', appliedFilters.fromDate);
+        if (appliedFilters.toDate) queryParams.append('date_to', appliedFilters.toDate);
+        if (appliedFilters.minAttendance > 0) queryParams.append('min_attendance', String(appliedFilters.minAttendance));
+        if (appliedFilters.closeVotingsOnly) queryParams.append('close_votings_only', 'true');
+        if (appliedFilters.activeOnly !== undefined) queryParams.append('active_only', appliedFilters.activeOnly ? 'true' : 'false');
 
         const response = await fetch(`/api/clubs/${selectedClubId}/stats?${queryParams.toString()}`);
         if (!response.ok) {

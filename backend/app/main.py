@@ -2,9 +2,9 @@ import asyncio
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .dependencies import get_sejm_client
-from .routers import mps, votings, bills, proceedings, committees
+from .routers import mps, votings, bills, proceedings, committees, clubs
 from .services.background_tasks import background_sync_proceedings
-
+ 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Automatyczne tworzenie tabel (jeśli nie istnieją) na starcie aplikacji
@@ -35,6 +35,7 @@ app.include_router(votings.router, prefix="/api")
 app.include_router(bills.router, prefix="/api")
 app.include_router(committees.router, prefix="/api")
 app.include_router(proceedings.router, prefix="/api")
+app.include_router(clubs.router, prefix="/api")
 
 @app.get("/api/health")
 async def health():

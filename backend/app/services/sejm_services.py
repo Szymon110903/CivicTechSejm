@@ -51,6 +51,18 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
         
     dates = proceeding_info.get("dates", [])
     
+    # 2. Fetch list of votings for the sitting first
+    votings_list = await client.get_votings(term, sitting=proceeding_id)
+    if not votings_list and not proceeding_info:
+        logger.warning(f"Proceeding {proceeding_id} not found on Sejm API")
+        return {"success": False, "imported_votings": 0, "message": f"Proceeding {proceeding_id} not found on Sejm API"}
+    if not votings_list:
+        logger.warning(f"No votings found for sitting {proceeding_id}")
+        return {"success": True, "imported_votings": 0, "message": "No votings found"}
+        
+    if not isinstance(votings_list, list):
+        votings_list = [votings_list]
+
     # Get or create Proceeding
     proceeding = db.query(Proceeding).filter_by(term=term, proceeding_id=str(proceeding_id)).first()
     if not proceeding:
@@ -75,15 +87,6 @@ async def import_proceeding_votings(db: Session, client: SejmAPIClient, term: in
         db.commit()
         db.refresh(proceeding)
         logger.info(f"Created new Proceeding term={term} id={proceeding_id} date={proc_date}")
-
-    # 2. Fetch list of votings for the sitting
-    votings_list = await client.get_votings(term, sitting=proceeding_id)
-    if not votings_list:
-        logger.warning(f"No votings found for sitting {proceeding_id}")
-        return {"success": True, "imported_votings": 0, "message": "No votings found"}
-        
-    if not isinstance(votings_list, list):
-        votings_list = [votings_list]
         
     imported_count = 0
     errors_count = 0

@@ -58,9 +58,13 @@ def fixture_client(db_session):
 # Klasa mockująca asynchroniczne wywołania API Sejmu
 class AsyncMockSejmClient:
     async def get_proceedings(self, term: int, proceeding_id: str):
+        if str(proceeding_id) == "999":
+            return {}
         return {"number": int(proceeding_id), "dates": ["2026-05-15"]}
         
     async def get_votings(self, term: int, sitting: str = None, num: int = None):
+        if sitting and str(sitting) == "999":
+            return []
         if sitting and num:
             # Szczegóły głosowania
             return {

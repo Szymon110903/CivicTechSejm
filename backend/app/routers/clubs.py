@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, and_
 from datetime import date
 from typing import List, Optional, Dict, Any
 
 from ..dependencies import get_db, get_sejm_client
+from ..sejm_client import SejmAPIClient
+from ..core.cache import LocalCache
 from ..models import Voting, VotingDay, ClubVotingResult, Party, Proceeding
 from ..schemas import (
     ClubSummaryDTO, ClubDetailedStatsDTO, RebelMpDTO, ClubHistoricalPointDTO,
@@ -13,6 +15,7 @@ from ..schemas import (
 )
 
 router = APIRouter(prefix="/clubs", tags=["Clubs"])
+analytics_cache = LocalCache(default_ttl=900)  # 15-minutowy cache w pamięci RAM na wyniki analityczne
 
 CLUB_NAMES_MAP = {
     "KO": "Koalicja Obywatelska",
@@ -46,6 +49,28 @@ def check_was_majority(voting_passed: bool, club_decision: str) -> bool:
     if not voting_passed and club_decision in ("NO", "ABSTAIN"):
         return True
     return False
+
+async def get_active_mps_info(client: Any, term: int = 10) -> tuple[set[str], Dict[str, int]]:
+    """
+    Zwraca (zbiór_id_aktywnych_posłów, słownik_liczebności_klubów) dla 460 aktualnie aktywnych posłów w kadencji.
+    """
+    active_ids = set()
+    club_counts: Dict[str, int] = {}
+    try:
+        if client and hasattr(client, "get_mps"):
+            mps_data = await client.get_mps(term=term)
+            if isinstance(mps_data, list):
+                for mp in mps_data:
+                    if mp.get("active", True) is True:
+                        mid = str(mp.get("id", ""))
+                        if mid:
+                            active_ids.add(mid)
+                        c = mp.get("club")
+                        if c:
+                            club_counts[c] = club_counts.get(c, 0) + 1
+    except Exception:
+        pass
+    return active_ids, club_counts
 
 def filter_votings_query(
     db: Session,
@@ -81,18 +106,28 @@ def filter_votings_query(
 
 
 @router.get("", response_model=List[ClubSummaryDTO])
+@router.get("/", response_model=List[ClubSummaryDTO])
 async def get_all_clubs_stats(
+    response: Response,
     date_from: Optional[date] = Query(None, description="Start date filter"),
     date_to: Optional[date] = Query(None, description="End date filter"),
     close_votings_only: bool = Query(False, description="Filter only close/contested votings (<15 diff)"),
     topic: Optional[str] = Query(None, description="Topic/title search filter"),
     sitting: Optional[str] = Query(None, description="Sitting number filter"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    client: SejmAPIClient = Depends(get_sejm_client)
 ):
     """
     Retrieve list of all parliamentary clubs with aggregated voting statistics,
     cohesion scores, attendance, and majority support, filtered by date/topic.
     """
+    response.headers["Cache-Control"] = "public, max-age=300"
+    cache_key = f"all_clubs:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    active_mp_ids, current_club_counts = await get_active_mps_info(client)
     votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
     
     club_stats: Dict[str, Dict[str, Any]] = {}
@@ -141,7 +176,7 @@ async def get_all_clubs_stats(
         result.append(ClubSummaryDTO(
             club_id=cid,
             name=data["name"],
-            members_count=data["latest_members_count"],
+            members_count=current_club_counts.get(cid, data["latest_members_count"]),
             avg_attendance=avg_att,
             avg_cohesion=avg_coh,
             total_votings=tv,
@@ -151,11 +186,13 @@ async def get_all_clubs_stats(
         
     # Sort by members count descending
     result.sort(key=lambda x: x.members_count, reverse=True)
+    analytics_cache.set(cache_key, result)
     return result
 
 
 @router.get("/matrix", response_model=AgreementMatrixDTO)
 async def get_agreement_matrix(
+    response: Response,
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     close_votings_only: bool = Query(False),
@@ -167,6 +204,12 @@ async def get_agreement_matrix(
     Calculate the NxN agreement matrix between all clubs for the filtered votings.
     Returns percentage of votings where two clubs voted identically.
     """
+    response.headers["Cache-Control"] = "public, max-age=300"
+    cache_key = f"matrix:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
     
     # Identify all active clubs in these votings
@@ -224,15 +267,18 @@ async def get_agreement_matrix(
                 ))
         matrix.append(row)
         
-    return AgreementMatrixDTO(
+    result_dto = AgreementMatrixDTO(
         clubs=clubs_list,
         matrix=matrix,
         cells=cells
     )
+    analytics_cache.set(cache_key, result_dto)
+    return result_dto
 
 
 @router.get("/compare", response_model=ClubComparisonDTO)
 async def compare_clubs(
+    response: Response,
     clubs: List[str] = Query(..., description="List of club IDs to compare (2 or 3)"),
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
@@ -240,7 +286,8 @@ async def compare_clubs(
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200, description="Max history items to return"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    client: SejmAPIClient = Depends(get_sejm_client)
 ):
     """
     Compare 2 or more clubs side by side across filtered votings.
@@ -249,8 +296,15 @@ async def compare_clubs(
     if len(clubs) < 2:
         raise HTTPException(status_code=400, detail="Please specify at least 2 clubs to compare.")
         
+    response.headers["Cache-Control"] = "public, max-age=300"
+    clubs_key = ",".join(sorted(clubs))
+    cache_key = f"compare:{clubs_key}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{limit}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     # Get summary stats for each requested club
-    all_summaries = await get_all_clubs_stats(date_from, date_to, close_votings_only, topic, sitting, db)
+    all_summaries = await get_all_clubs_stats(response, date_from, date_to, close_votings_only, topic, sitting, db, client)
     summary_map = {s.club_id: s for s in all_summaries}
     
     selected_summaries = []
@@ -300,16 +354,19 @@ async def compare_clubs(
                 
     alignment_pct = round((aligned_votings / common_votings) * 100.0, 1) if common_votings > 0 else 0.0
     
-    return ClubComparisonDTO(
+    result_dto = ClubComparisonDTO(
         clubs=selected_summaries,
         common_votings=common_votings,
         alignment_percent=alignment_pct,
         comparison_history=history_items
     )
+    analytics_cache.set(cache_key, result_dto)
+    return result_dto
 
 
 @router.get("/filter", response_model=List[ClubBehaviorFilterResultDTO])
 async def filter_votings_by_behavior(
+    response: Response,
     club_id: Optional[str] = Query(None, description="Filter by specific club behavior"),
     decision: Optional[str] = Query(None, description="Decision made by club (YES, NO, ABSTAIN, MIXED)"),
     max_cohesion: Optional[float] = Query(None, description="Max cohesion threshold (e.g. 80.0 for divided clubs)"),
@@ -326,6 +383,12 @@ async def filter_votings_by_behavior(
     Behavioral search engine: find votings where a specific club voted in a certain way
     or where club cohesion was below/above a specified threshold.
     """
+    response.headers["Cache-Control"] = "public, max-age=300"
+    cache_key = f"filter:{club_id}:{decision}:{max_cohesion}:{min_cohesion}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}:{limit}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).limit(limit * 2).all()
     
     results: List[ClubBehaviorFilterResultDTO] = []
@@ -369,23 +432,33 @@ async def filter_votings_by_behavior(
             if len(results) >= limit:
                 break
                 
+    analytics_cache.set(cache_key, results)
     return results
 
 
 @router.get("/{club_id}/stats", response_model=ClubDetailedStatsDTO)
 async def get_club_detailed_stats(
     club_id: str,
+    response: Response,
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     close_votings_only: bool = Query(False),
     topic: Optional[str] = Query(None),
     sitting: Optional[str] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    client: SejmAPIClient = Depends(get_sejm_client)
 ):
     """
     Retrieve comprehensive detailed analytics for a specific club,
     including historical trend points and Rebel MPs / Top Absentees index.
     """
+    response.headers["Cache-Control"] = "public, max-age=300"
+    cache_key = f"club_detail:{club_id}:{date_from}:{date_to}:{close_votings_only}:{topic}:{sitting}"
+    cached = analytics_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    active_mp_ids, current_club_counts = await get_active_mps_info(client)
     votings = filter_votings_query(db, date_from, date_to, close_votings_only, topic, sitting).all()
     
     total_votings = 0
@@ -463,6 +536,8 @@ async def get_club_detailed_stats(
     # Build Rebel MPs list
     rebels_list: List[RebelMpDTO] = []
     for mpt in mp_tracker.values():
+        if active_mp_ids and mpt["mp_id"] not in active_mp_ids:
+            continue
         t = mpt["total"]
         if t == 0:
             continue
@@ -488,10 +563,10 @@ async def get_club_detailed_stats(
     # Sort for absentees top 10
     top_absentees = sorted([r for r in rebels_list if r.absent_votes_count > 0], key=lambda x: (x.absent_votes_count, x.absent_rate_percent), reverse=True)[:10]
     
-    return ClubDetailedStatsDTO(
+    result_dto = ClubDetailedStatsDTO(
         club_id=club_id,
         name=get_club_name(db, club_id),
-        members_count=latest_members_count,
+        members_count=current_club_counts.get(club_id, latest_members_count),
         avg_attendance=avg_att,
         avg_cohesion=avg_coh,
         majority_support_percent=maj_sup,
@@ -501,3 +576,5 @@ async def get_club_detailed_stats(
         top_absentees=top_absentees,
         history=history
     )
+    analytics_cache.set(cache_key, result_dto)
+    return result_dto

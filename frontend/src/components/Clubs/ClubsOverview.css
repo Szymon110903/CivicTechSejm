@@ -1,0 +1,18 @@
+/* ClubsOverview.css - Minimal helpers for Bootstrap 5 grid */
+
+.progress-bar-purple {
+  background-color: #a855f7 !important;
+}
+
+.legend-dot-bs {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.legend-dot-bs.yes { background-color: #198754; }
+.legend-dot-bs.no { background-color: #dc3545; }
+.legend-dot-bs.abstain { background-color: #ffc107; }
+.legend-dot-bs.mixed { background-color: #a855f7; }

@@ -15,10 +15,16 @@ import {
   Sliders
 } from 'lucide-react';
 import './ClubsDashboard.css';
+import ClubsOverview from './ClubsOverview';
+import AgreementMatrix from './AgreementMatrix';
+import ClubDetailRebels from './ClubDetailRebels';
+import ClubComparison from './ClubComparison';
+import ClubBehaviorSearch from './ClubBehaviorSearch';
 
 const ClubsDashboard = () => {
   // Navigation tabs state
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedClubForRebels, setSelectedClubForRebels] = useState(null);
 
   // Filter form state
   const [fromDate, setFromDate] = useState('');
@@ -105,50 +111,53 @@ const ClubsDashboard = () => {
   const IconComponent = currentTabInfo.icon;
 
   return (
-    <div className="clubs-dashboard">
+    <div className="clubs-dashboard-wrapper container-fluid py-4">
       {/* 1. Header Section */}
-      <header className="clubs-header">
-        <div className="clubs-title-row">
-          <h1 className="clubs-title">Analityka Klubów i Partii</h1>
-          <div className="clubs-badge">
+      <header className="mb-4">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <h1 className="h2 fw-bold text-white mb-0">Analityka Klubów i Partii</h1>
+          <span className="badge rounded-pill bg-primary d-inline-flex align-items-center gap-2 px-3 py-2 fs-6">
             <Briefcase size={16} />
             <span>Kadencja 10 Sejmu RP</span>
-          </div>
+          </span>
         </div>
-        <p className="clubs-subtitle">
+        <p className="text-muted fs-6 mb-0">
           Kompleksowy pulpit nawigacyjny do analizy dyscypliny klubowej, spójności wewnętrznej, frekwencji oraz taktycznych koalicji w głosowaniach parlamentarnych.
         </p>
       </header>
 
-      {/* 2. Sub-navigation Tabs */}
-      <nav className="clubs-tabs" aria-label="Zakładki analityczne">
+      {/* 2. Sub-navigation Tabs (Bootstrap Nav Pills) */}
+      <ul className="nav nav-pills nav-pills-scrollable gap-2 pb-3 mb-4 border-bottom border-secondary" role="tablist">
         {tabs.map((tab) => {
           const TabIcon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`club-tab-btn ${isActive ? 'active' : ''}`}
-            >
-              <TabIcon size={18} />
-              <span>{tab.label}</span>
-            </button>
+            <li className="nav-item" key={tab.id} role="presentation">
+              <button
+                onClick={() => setActiveTab(tab.id)}
+                className={`nav-link d-flex align-items-center gap-2 py-2 px-3 ${isActive ? 'active bg-primary text-white fw-semibold shadow-sm' : 'text-light bg-dark border border-secondary'}`}
+                role="tab"
+                aria-selected={isActive}
+              >
+                <TabIcon size={18} />
+                <span>{tab.label}</span>
+              </button>
+            </li>
           );
         })}
-      </nav>
+      </ul>
 
-      {/* 3. Glassmorphism Global Analytics Filter Bar */}
-      <section className="analytics-filter-bar" aria-label="Globalny Pasek Filtrów">
-        <div className="filter-bar-header">
-          <div className="filter-bar-title">
-            <Sliders size={18} className="text-accent" style={{ color: 'var(--accent)' }} />
+      {/* 3. Global Analytics Filter Bar (Bootstrap Card) */}
+      <section className="card bg-dark border-secondary mb-4 shadow-sm" aria-label="Globalny Pasek Filtrów">
+        <div className="card-header bg-dark border-bottom border-secondary d-flex justify-content-between align-items-center py-3">
+          <div className="d-flex align-items-center gap-2 fw-semibold text-white">
+            <Sliders size={18} className="text-info" />
             <span>Globalne Filtry Analityczne</span>
           </div>
           <button 
             type="button" 
             onClick={handleResetFilters} 
-            className="filter-bar-reset-btn"
+            className="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
             title="Zresetuj wszystkie filtry do domyślnych"
           >
             <RotateCcw size={14} />
@@ -156,164 +165,157 @@ const ClubsDashboard = () => {
           </button>
         </div>
 
-        <form onSubmit={handleApplyFilters} className="filter-grid">
-          {/* Przedział Dat */}
-          <div className="filter-group">
-            <div className="filter-label">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="card-body py-3">
+          <form onSubmit={handleApplyFilters} className="row g-3 align-items-end">
+            {/* Przedział Dat */}
+            <div className="col-12 col-md-6 col-xl-4">
+              <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-1">
                 <Calendar size={14} /> Przedział czasowy
-              </span>
-            </div>
-            <div className="filter-input-row">
-              <input 
-                type="date" 
-                value={fromDate} 
-                onChange={(e) => setFromDate(e.target.value)}
-                className="filter-date-input" 
-                placeholder="Od daty"
-                aria-label="Data od"
-              />
-              <span style={{ color: 'var(--text)' }}>–</span>
-              <input 
-                type="date" 
-                value={toDate} 
-                onChange={(e) => setToDate(e.target.value)}
-                className="filter-date-input" 
-                placeholder="Do daty"
-                aria-label="Data do"
-              />
-            </div>
-            <div className="quick-date-pills">
-              <button type="button" onClick={() => handleQuickDate(30)} className="date-pill-btn">30 dni</button>
-              <button type="button" onClick={() => handleQuickDate(90)} className="date-pill-btn">3 mies.</button>
-              <button type="button" onClick={() => handleQuickDate(0)} className="date-pill-btn">Wszystkie</button>
-            </div>
-          </div>
-
-          {/* Minimalna Frekwencja */}
-          <div className="filter-group">
-            <div className="filter-label">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Percent size={14} /> Min. Frekwencja w Głosowaniu
-              </span>
-              <span className="filter-label-value">{minAttendance}%</span>
-            </div>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              step="5"
-              value={minAttendance} 
-              onChange={(e) => setMinAttendance(e.target.value)}
-              className="filter-range-slider"
-              aria-label="Suwak minimalnej frekwencji"
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text)' }}>
-              <span>0% (Dowolna)</span>
-              <span>50% (Kworum)</span>
-              <span>100% (Pełna)</span>
-            </div>
-          </div>
-
-          {/* Ważne / Stykowe Głosowania */}
-          <div className="filter-group">
-            <div className="filter-label">
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Zap size={14} /> Kategoria głosowań
-              </span>
-            </div>
-            <label className={`filter-toggle-card ${closeVotingsOnly ? 'active' : ''}`}>
-              <span className="toggle-label-text">Tylko stykowe (40–60% poparcia)</span>
-              <div className="toggle-switch">
+              </label>
+              <div className="input-group input-group-sm mb-1">
                 <input 
-                  type="checkbox" 
-                  checked={closeVotingsOnly} 
-                  onChange={(e) => setCloseVotingsOnly(e.target.checked)}
-                  aria-label="Przełącznik tylko stykowe głosowania"
+                  type="date" 
+                  value={fromDate} 
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="form-control form-control-dark" 
+                  aria-label="Data od"
                 />
-                <span className="toggle-slider"></span>
+                <span className="input-group-text bg-secondary border-secondary text-white">–</span>
+                <input 
+                  type="date" 
+                  value={toDate} 
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="form-control form-control-dark" 
+                  aria-label="Data do"
+                />
               </div>
-            </label>
-          </div>
+              <div className="d-flex gap-1">
+                <button type="button" onClick={() => handleQuickDate(30)} className="btn btn-outline-secondary btn-sm py-0 px-2 small">30 dni</button>
+                <button type="button" onClick={() => handleQuickDate(90)} className="btn btn-outline-secondary btn-sm py-0 px-2 small">3 mies.</button>
+                <button type="button" onClick={() => handleQuickDate(0)} className="btn btn-outline-secondary btn-sm py-0 px-2 small">Wszystkie</button>
+              </div>
+            </div>
 
-          {/* Przycisk Zastosuj */}
-          <div className="filter-group">
-            <button type="submit" className="filter-apply-btn">
-              <Check size={18} />
-              <span>Zastosuj Filtry</span>
-            </button>
-          </div>
-        </form>
+            {/* Minimalna Frekwencja */}
+            <div className="col-12 col-md-6 col-xl-3">
+              <div className="d-flex justify-content-between align-items-center mb-1">
+                <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-0">
+                  <Percent size={14} /> Min. Frekwencja w Głosowaniu
+                </label>
+                <span className="badge bg-info text-dark font-monospace">{minAttendance}%</span>
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                step="5"
+                value={minAttendance} 
+                onChange={(e) => setMinAttendance(e.target.value)}
+                className="form-range"
+                aria-label="Suwak minimalnej frekwencji"
+              />
+              <div className="d-flex justify-content-between text-muted" style={{ fontSize: '0.7rem' }}>
+                <span>0% (Dowolna)</span>
+                <span>50% (Kworum)</span>
+                <span>100% (Pełna)</span>
+              </div>
+            </div>
 
-        {/* Aktywne Badges */}
-        {hasActiveFilters && (
-          <div className="active-filters-row">
-            <span style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: 600 }}>Aktywne filtry:</span>
-            {appliedFilters.fromDate && (
-              <span className="active-filter-badge">
-                Od: {appliedFilters.fromDate}
-                <button type="button" onClick={() => removeFilter('fromDate')} aria-label="Usuń filtr od daty">
-                  <X size={13} />
-                </button>
-              </span>
-            )}
-            {appliedFilters.toDate && (
-              <span className="active-filter-badge">
-                Do: {appliedFilters.toDate}
-                <button type="button" onClick={() => removeFilter('toDate')} aria-label="Usuń filtr do daty">
-                  <X size={13} />
-                </button>
-              </span>
-            )}
-            {appliedFilters.minAttendance > 0 && (
-              <span className="active-filter-badge">
-                Min. frekwencja: {appliedFilters.minAttendance}%
-                <button type="button" onClick={() => removeFilter('minAttendance')} aria-label="Usuń filtr minimalnej frekwencji">
-                  <X size={13} />
-                </button>
-              </span>
-            )}
-            {appliedFilters.closeVotingsOnly && (
-              <span className="active-filter-badge">
-                Tylko stykowe głosowania
-                <button type="button" onClick={() => removeFilter('closeVotingsOnly')} aria-label="Usuń filtr stykowe głosowania">
-                  <X size={13} />
-                </button>
-              </span>
-            )}
-          </div>
-        )}
+            {/* Ważne / Stykowe Głosowania */}
+            <div className="col-12 col-md-6 col-xl-3">
+              <label className="form-label d-flex align-items-center gap-1 text-light small fw-bold mb-1">
+                <Zap size={14} /> Kategoria głosowań
+              </label>
+              <div className="card bg-secondary bg-opacity-25 border-secondary p-2">
+                <div className="form-check form-switch mb-0 d-flex align-items-center justify-content-between ps-0">
+                  <label className="form-check-label text-light small mb-0 pe-2" htmlFor="closeVotingsSwitch" style={{ cursor: 'pointer' }}>
+                    Tylko stykowe (40–60% poparcia)
+                  </label>
+                  <input 
+                    className="form-check-input ms-0 float-none" 
+                    type="checkbox" 
+                    role="switch" 
+                    id="closeVotingsSwitch"
+                    checked={closeVotingsOnly} 
+                    onChange={(e) => setCloseVotingsOnly(e.target.checked)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Przycisk Zastosuj */}
+            <div className="col-12 col-md-6 col-xl-2">
+              <button type="submit" className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm py-2">
+                <Check size={18} />
+                <span className="fw-semibold">Zastosuj</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Aktywne Badges */}
+          {hasActiveFilters && (
+            <div className="d-flex align-items-center flex-wrap gap-2 mt-3 pt-3 border-top border-secondary">
+              <span className="small text-muted fw-semibold">Aktywne filtry:</span>
+              {appliedFilters.fromDate && (
+                <span className="badge bg-secondary d-inline-flex align-items-center gap-1 py-1 px-2">
+                  Od: {appliedFilters.fromDate}
+                  <button type="button" onClick={() => removeFilter('fromDate')} className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} aria-label="Usuń filtr od daty"></button>
+                </span>
+              )}
+              {appliedFilters.toDate && (
+                <span className="badge bg-secondary d-inline-flex align-items-center gap-1 py-1 px-2">
+                  Do: {appliedFilters.toDate}
+                  <button type="button" onClick={() => removeFilter('toDate')} className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} aria-label="Usuń filtr do daty"></button>
+                </span>
+              )}
+              {appliedFilters.minAttendance > 0 && (
+                <span className="badge bg-secondary d-inline-flex align-items-center gap-1 py-1 px-2">
+                  Min. frekwencja: {appliedFilters.minAttendance}%
+                  <button type="button" onClick={() => removeFilter('minAttendance')} className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} aria-label="Usuń filtr minimalnej frekwencji"></button>
+                </span>
+              )}
+              {appliedFilters.closeVotingsOnly && (
+                <span className="badge bg-secondary d-inline-flex align-items-center gap-1 py-1 px-2">
+                  Tylko stykowe głosowania
+                  <button type="button" onClick={() => removeFilter('closeVotingsOnly')} className="btn-close btn-close-white" style={{ fontSize: '0.5rem' }} aria-label="Usuń filtr stykowe głosowania"></button>
+                </span>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* 4. Skeleton Preview / Target Container (For Step 4 & Step 5) */}
+      {/* 4. Main Target Container for Analytical Views */}
       <main className="clubs-content-area">
-        <div className="skeleton-preview-card">
-          <div className="skeleton-icon-wrapper">
-            <IconComponent size={36} />
-          </div>
-          <h2 className="skeleton-title">{currentTabInfo.label}</h2>
-          <p className="skeleton-description">
-            {currentTabInfo.desc}
-          </p>
+        {activeTab === 'overview' && (
+          <ClubsOverview 
+            appliedFilters={appliedFilters} 
+            onSelectClub={(clubId) => {
+              setSelectedClubForRebels(clubId);
+              setActiveTab('rebels');
+            }} 
+          />
+        )}
 
-          <div className="skeleton-params-box">
-            <div className="skeleton-params-title">
-              Podgląd parametrów zapytania do API (Gotowe do Kroku 4 i 5):
-            </div>
-            <pre className="skeleton-params-json">
-{JSON.stringify({
-  active_view: activeTab,
-  query_params: {
-    term: 10,
-    from_date: appliedFilters.fromDate || null,
-    to_date: appliedFilters.toDate || null,
-    min_attendance: appliedFilters.minAttendance > 0 ? appliedFilters.minAttendance : null,
-    close_votings_only: appliedFilters.closeVotingsOnly
-  }
-}, null, 2)}
-            </pre>
-          </div>
-        </div>
+        {activeTab === 'matrix' && (
+          <AgreementMatrix appliedFilters={appliedFilters} />
+        )}
+
+        {activeTab === 'rebels' && (
+          <ClubDetailRebels 
+            appliedFilters={appliedFilters} 
+            initialClubId={selectedClubForRebels} 
+          />
+        )}
+
+        {activeTab === 'compare' && (
+          <ClubComparison appliedFilters={appliedFilters} />
+        )}
+
+        {activeTab === 'search' && (
+          <ClubBehaviorSearch appliedFilters={appliedFilters} />
+        )}
       </main>
     </div>
   );

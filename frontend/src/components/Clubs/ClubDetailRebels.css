@@ -1,0 +1,9 @@
+/* ClubDetailRebels.css - Minimal overrides for Bootstrap 5 Rebels view */
+
+.rebels-container-bs {
+  color: var(--bs-light);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}

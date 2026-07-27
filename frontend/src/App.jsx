@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import Sidebar from './components/Layout/Sidebar'
-import VotingList from './components/VotingList/VotingList'
 import ProceedingsList from './components/Proceedings/ProceedingsList'
 import VotingDetails from './components/VotingList/VotingDetails'
+import ClubsDashboard from './components/Clubs/ClubsDashboard'
 
 function App() {
   const [status, setStatus] = useState('Loading backend status...')
@@ -40,8 +40,8 @@ function App() {
           <Routes>
             <Route path="/" element={<ProceedingsList />} />
             <Route path="/posiedzenia/:id" element={<ProceedingsList />} />
-            <Route path="/glosowania" element={<VotingList />} />
             <Route path="/glosowania/:id" element={<VotingDetails />} />
+            <Route path="/kluby/*" element={<ClubsDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

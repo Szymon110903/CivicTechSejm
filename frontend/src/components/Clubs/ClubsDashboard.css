@@ -1,0 +1,44 @@
+/* ClubsDashboard.css - Minimal overrides for Bootstrap 5 Dark Theme */
+
+.clubs-dashboard-wrapper {
+  color: var(--bs-light);
+}
+
+/* Ensure horizontal scrolling for tabs on mobile */
+.nav-pills-scrollable {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.nav-pills-scrollable .nav-link {
+  white-space: nowrap;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-pills-scrollable .nav-link:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Custom styling for form inputs in dark theme if needed */
+.form-control-dark, .form-select-dark {
+  background-color: #1a1d20 !important;
+  color: #fff !important;
+  border-color: #373b3e !important;
+}
+
+.form-control-dark:focus, .form-select-dark:focus {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Smooth transitions for cards */
+.card-hover-effect {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.5)!important;
+}

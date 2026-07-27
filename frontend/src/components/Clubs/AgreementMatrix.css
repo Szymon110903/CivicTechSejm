@@ -1,0 +1,45 @@
+/* AgreementMatrix.css - Minimal helpers for Bootstrap 5 Matrix table */
+
+.matrix-table-bs th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #1a1d20 !important;
+}
+
+.matrix-table-bs th.row-header-bs {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  text-align: right;
+  background-color: #1a1d20 !important;
+}
+
+.matrix-cell-bs {
+  font-family: var(--bs-font-monospace);
+  font-weight: 700;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: default;
+}
+
+.matrix-cell-bs:hover:not(.diagonal-bs) {
+  transform: scale(1.1);
+  z-index: 20;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.6) !important;
+  position: relative;
+}
+
+.matrix-cell-bs.diagonal-bs {
+  background-color: #212529 !important;
+  color: #6c757d !important;
+  opacity: 0.6;
+}
+
+.legend-color-box-bs {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}

@@ -38,9 +38,29 @@ Dla endpointów zwracających potężną ilość danych (jak szczegóły ze wszy
 1. **On-Demand Fetching (Pobieranie w Locie)**: Zamiast zwracać "404 Not Found" gdy użytkownik zażąda posiedzenia którego jeszcze nie mamy zescrapowanego, API usypia na kilkanaście sekund, wywołuje w tle `import_proceeding_votings`, a następnie serwuje świeże dane. 
 2. **Background Sync Task**: Jako wsparcie, backend uruchamia przy starcie cichy, asynchroniczny task, który co 24 godziny odpytuje serwery o braki w naszych rekordach i uzupełnia je w tle. Odciąża to pierwsze żądanie użytkownika.
 
+## Analityka Klubowa i Filtracja Mandatów (Proxy & Cache)
+
+W ramach rozwoju modułu statystyk klubowych (`/api/clubs`) wdrożono zaawansowaną obsługę pamięci podręcznej oraz dynamiczną filtrację mandatów na poziomie Proxy:
+
+1. **Cache Wyników Analitycznych (`analytics_cache`)**:
+   Obliczanie wskaźników kohezji (spójności), frekwencji klubowej, macierzy zgodności NxN czy indeksu buntowników dla setek głosowań jest operacją obciążającą procesor i bazę danych. Dlatego wszystkie endpointy w routerze `clubs.py` (`/api/clubs`, `/api/clubs/compare`, `/api/clubs/matrix`, `/api/clubs/{id}/stats`, `/api/clubs/filter`) korzystają z pamięci podręcznej w pamięci RAM z czasem wygaśnięcia TTL (5 minut) oraz nagłówkiem HTTP `Cache-Control: public, max-age=300`. Klucz pamięci podręcznej uwzględnia wszystkie aktywne filtry (daty, frekwencję, tematykę, stykowe głosowania).
+
+2. **Problem rotacji mandatów w trakcie kadencji (559 vs 460 posłów)**:
+   W trakcie trwania X kadencji Sejmu dochodzi do wygaszania mandatów, zmian barw partyjnych oraz powstawania i rozwiązywania kół poselskich. Bez odpowiedniej filtracji, zsumowanie członków wszystkich klubów historycznych oraz posłów występujących w rekordach głosowań daje **559 posłów** w **16 klubach/kołach**.
+
+3. **Dynamiczna weryfikacja aktywnych mandatów przez Proxy (`active_only=True`)**:
+   Aby zapewnić rzetelność analityki i odzwierciedlać aktualny układ sił w Parlamencie, backend w locie wykorzystuje klienta `SejmAPIClient` do odpytania oficjalnego API Sejmu o bieżącą listę posłów (funkcja pomocnicza `get_active_mps_info`).
+   - **Gdy `active_only=True` (domyślnie)**: Proxy bierze pod uwagę wyłącznie posłów ze statusem `active == True`. Kluby i koła historyczne o aktualnej liczbie aktywnych posłów równej `0` są automatycznie ukrywane. Suma liczby posłów w zestawieniach wynosi wówczas dokładnie **460**, a statystyki buntowników i absencji nie uwzględniają osób, które przestały pełnić mandat.
+   - **Gdy `active_only=False`**: Przełącznik w interfejsie użytkownika umożliwia powrót do pełnego ujęcia historycznego z całej kadencji (uwzględniającego wszystkie 16 klubów/kół i 559 posłów).
+
+4. **Kaskadowa obsługa filtrów analitycznych**:
+   Przekazywane przez frontend filtry (np. suwak minimalnej frekwencji `min_attendance`, przedział czasowy `date_from`/`date_to`, głosowania stykowe `close_votings_only`) są normalizowane i procesowane na poziomie warstwy Proxy zoptymalizowanym zapytaniem w SQLAlchemy (`filter_votings_query`), zapewniając spójność danych w każdym podwidoku panelu klubowego.
+
+> **Uwaga**: Pełna dokumentacja matematyczna, metodologiczna i algorytmiczna wskaźników analitycznych (kohezja, zgodność, indeks buntowników) znajduje się w dedykowanym pliku [club_analytics.md](file:///d:/repos/CivicTechSejm/docs/club_analytics.md).
+
 ## Gdzie szukać kodu?
 
-*   **Router Proxy (Backend)**: `backend/app/routers/proceedings.py` oraz `backend/app/routers/votings.py`
-*   **Klient komunikujący się z API Sejmu**: `backend/app/sejm_client/legislative.py`
-*   **Zadania w tle**: `backend/app/services/background_tasks.py`
-*   **Konsument na Frontendzie**: `frontend/src/components/Proceedings/ProceedingsList.jsx` i `ProceedingDetails.jsx`
+*   **Router Proxy i Analityka Klubowa (Backend)**: `backend/app/routers/proceedings.py`, `backend/app/routers/votings.py` oraz `backend/app/routers/clubs.py`
+*   **Klient komunikujący się z API Sejmu**: `backend/app/sejm_client/legislative.py`, `backend/app/sejm_client/mps.py`
+*   **Zadania w tle i mechanizm Cache**: `backend/app/services/background_tasks.py`, `backend/app/core/cache.py`
+*   **Konsument na Frontendzie**: `frontend/src/components/Proceedings/` oraz pulpit analityki klubowej w `frontend/src/components/Clubs/` (w tym `ClubsDashboard.jsx`, `ClubsOverview.jsx`, `ClubComparison.jsx`, `AgreementMatrix.jsx`, `ClubDetailRebels.jsx`, `ClubBehaviorSearch.jsx`)

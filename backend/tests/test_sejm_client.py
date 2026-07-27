@@ -52,6 +52,7 @@ async def test_sejm_client_get_votings_paths():
     with patch.object(client.client, "get", new_callable=AsyncMock) as mock_get:
         mock_resp_obj = MagicMock()
         mock_resp_obj.status_code = 200
+        mock_resp_obj.headers = {"content-type": "application/json"}
         mock_resp_obj.json.return_value = {"success": True}
         mock_get.return_value = mock_resp_obj
         

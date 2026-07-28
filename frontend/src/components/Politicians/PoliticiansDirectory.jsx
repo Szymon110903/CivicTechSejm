@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import './Politicians.css';
 import { CLUB_ORDER } from '../../utils/clubConfig';
+import SejmChamber from './SejmChamber';
+import PoliticianSidePanel from './PoliticianSidePanel';
+import { Search } from 'lucide-react';
 
 const PoliticiansDirectory = () => {
   const [mps, setMps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // State for interaction
+  const [selectedMp, setSelectedMp] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchMps = async () => {
@@ -45,26 +51,48 @@ const PoliticiansDirectory = () => {
   return (
     <div className="container-fluid h-100 p-3">
       <div className="row h-100">
-        <div className="col-lg-8 col-xl-9 d-flex flex-column mb-3 mb-lg-0">
+        <div className="col-lg-6 col-xl-7 d-flex flex-column mb-3 mb-lg-0">
           <div className="card bg-dark border-secondary h-100 shadow">
-            <div className="card-header border-secondary text-light">
+            <div className="card-header border-secondary text-light d-flex justify-content-between align-items-center">
               <h5 className="mb-0">Sala Plenarna Sejmu ({mps.length} posłów)</h5>
+              
+              <div className="input-group" style={{ width: '250px' }}>
+                <span className="input-group-text bg-secondary border-secondary text-light">
+                  <Search size={16} />
+                </span>
+                <input 
+                  type="text" 
+                  className="form-control bg-dark text-light border-secondary" 
+                  placeholder="Szukaj posła lub partii..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
-            <div className="card-body d-flex flex-column align-items-center justify-content-center">
-              {loading && <p className="text-light">Pobieranie danych o posłach...</p>}
-              {error && <p className="text-danger">Błąd: {error}</p>}
-              {!loading && !error && <p className="text-muted">Dane pobrane. Trwa budowa interaktywnej sali...</p>}
+            
+            <div className="card-body d-flex flex-column align-items-center justify-content-center overflow-hidden p-0 position-relative">
+              {loading && <div className="text-light text-center p-4">Pobieranie danych o posłach...</div>}
+              {error && <div className="text-danger text-center p-4">Błąd: {error}</div>}
+              
+              {!loading && !error && (
+                <SejmChamber 
+                  mps={mps} 
+                  selectedMp={selectedMp} 
+                  onSelectMp={setSelectedMp}
+                  searchQuery={searchQuery}
+                />
+              )}
             </div>
           </div>
         </div>
         
-        <div className="col-lg-4 col-xl-3 d-flex flex-column">
+        <div className="col-lg-6 col-xl-5 d-flex flex-column">
           <div className="card bg-dark border-secondary h-100 shadow">
             <div className="card-header border-secondary text-light">
-              <h5 className="mb-0">Panel Posła</h5>
+              <h5 className="mb-0">Informacje o Pośle</h5>
             </div>
             <div className="card-body text-light">
-              <p className="text-muted">Wybierz miejsce na sali, aby zobaczyć szczegóły.</p>
+              <PoliticianSidePanel mp={selectedMp} />
             </div>
           </div>
         </div>

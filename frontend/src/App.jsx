@@ -5,6 +5,7 @@ import Sidebar from './components/Layout/Sidebar'
 import ProceedingsList from './components/Proceedings/ProceedingsList'
 import VotingDetails from './components/VotingList/VotingDetails'
 import ClubsDashboard from './components/Clubs/ClubsDashboard'
+import PoliticiansDirectory from './components/Politicians/PoliticiansDirectory'
 
 function App() {
   const [status, setStatus] = useState('Loading backend status...')
@@ -42,6 +43,7 @@ function App() {
             <Route path="/posiedzenia/:id" element={<ProceedingsList />} />
             <Route path="/glosowania/:id" element={<VotingDetails />} />
             <Route path="/kluby/*" element={<ClubsDashboard />} />
+            <Route path="/poslowie" element={<PoliticiansDirectory />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

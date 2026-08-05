@@ -102,6 +102,7 @@ class DocumentService:
 
         # Funkcja pomocnicza do konwersji
         async def convert_to_pdf(local_file_path, document):
+            import asyncio
             import subprocess
             import logging
             logger = logging.getLogger(__name__)
@@ -112,7 +113,14 @@ class DocumentService:
             ]
             try:
                 print(f"Running libreoffice cmd: {cmd}", flush=True)
-                result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                result = await asyncio.to_thread(
+                    subprocess.run,
+                    cmd,
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=120,
+                )
                 print(f"LibreOffice stdout: {result.stdout.decode()}", flush=True)
                 print(f"LibreOffice stderr: {result.stderr.decode()}", flush=True)
                 

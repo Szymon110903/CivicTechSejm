@@ -111,11 +111,17 @@ class DocumentService:
                 local_file_path, "--outdir", pdf_dir
             ]
             try:
-                subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"Running libreoffice cmd: {cmd}", flush=True)
+                result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print(f"LibreOffice stdout: {result.stdout.decode()}", flush=True)
+                print(f"LibreOffice stderr: {result.stderr.decode()}", flush=True)
+                
                 base_path = os.path.splitext(local_file_path)[0]
                 pdf_path = base_path + ".pdf"
+                print(f"Checking for converted file at: {pdf_path}", flush=True)
                 
                 if os.path.exists(pdf_path):
+                    print("Converted file exists!", flush=True)
                     async with aiofiles.open(pdf_path, "rb") as f:
                         file_bytes = await f.read()
                         
@@ -130,7 +136,13 @@ class DocumentService:
                     except OSError:
                         pass
                     return True
+                else:
+                    print(f"File {pdf_path} not found after conversion!", flush=True)
             except Exception as e:
+                print(f"Exception during convert_to_pdf: {e}", flush=True)
+                if isinstance(e, subprocess.CalledProcessError):
+                    print(f"CalledProcessError stdout: {e.stdout.decode()}", flush=True)
+                    print(f"CalledProcessError stderr: {e.stderr.decode()}", flush=True)
                 logger.error(f"Failed to convert {local_file_path} to PDF: {e}")
             return False
 

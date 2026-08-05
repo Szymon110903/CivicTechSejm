@@ -78,9 +78,10 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
   const abstainPercent = totalVotes > 0 ? ((abstainCount / totalVotes) * 100).toFixed(1) : '0';
 
   const docViewerDocs = documents.map(doc => {
+    const safeFileName = doc.filename.replace(/\.docx?$/i, '.pdf');
     return {
-      uri: `/api/bills/documents/${doc.id}/download`,
-      fileName: doc.filename,
+      uri: `/api/bills/documents/${doc.id}/download?name=${safeFileName}`,
+      fileName: safeFileName,
       fileType: 'pdf' // Wymuszamy PDF, bo backend konwertuje wszystko do PDF
     };
   });
@@ -138,9 +139,9 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             </span>
             <span className="text-muted">&bull;</span>
             <span className="fw-bold text-light fs-6">Głosowanie nr {voting_number}</span>
-            
+
             {documents.length > 0 && (
-              <button 
+              <button
                 className={`btn btn-sm ms-2 ms-md-4 d-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-pill shadow-sm transition-all ${activeTab === 'documents' ? 'btn-info text-dark' : 'btn-outline-info text-light'}`}
                 onClick={() => setActiveTab(activeTab === 'documents' ? 'details' : 'documents')}
               >
@@ -150,8 +151,8 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             )}
           </div>
 
-          <button 
-            className="btn btn-outline-danger d-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-bold shadow-sm" 
+          <button
+            className="btn btn-outline-danger d-flex align-items-center gap-2 px-3 py-2 rounded-3 fw-bold shadow-sm"
             onClick={onClose}
             title="Zamknij (ESC)"
           >
@@ -301,20 +302,23 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
               <div className="d-flex flex-column flex-grow-1">
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 bg-body p-2 rounded-top border border-secondary border-bottom-0 flex-shrink-0">
                   <ul className="nav nav-pills gap-2">
-                    {documents.map((doc, index) => (
-                      <li className="nav-item" key={doc.id}>
-                        <button
-                          className={`nav-link d-flex align-items-center gap-2 py-2 px-3 fw-medium ${index === activeDocIndex ? 'active bg-info text-dark shadow-sm' : 'text-light'}`}
-                          onClick={() => setActiveDocIndex(index)}
-                        >
-                          <FileText size={16} />
-                          <span>{doc.filename}</span>
-                        </button>
-                      </li>
-                    ))}
+                    {documents.map((doc, index) => {
+                      const safeName = doc.filename.replace(/\.docx?$/i, '.pdf');
+                      return (
+                        <li className="nav-item" key={doc.id}>
+                          <button
+                            className={`nav-link d-flex align-items-center gap-2 py-2 px-3 fw-medium ${index === activeDocIndex ? 'active bg-info text-dark shadow-sm' : 'text-light'}`}
+                            onClick={() => setActiveDocIndex(index)}
+                          >
+                            <FileText size={16} />
+                            <span>{safeName}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                   {documents[activeDocIndex] && (
-                    <a 
+                    <a
                       href={`/api/bills/documents/${documents[activeDocIndex].id}/download`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -327,8 +331,9 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
                 </div>
 
                 <div className="border border-secondary rounded-bottom overflow-hidden bg-white flex-grow-1 d-flex flex-column">
-                  <DocViewer 
-                    documents={[docViewerDocs[activeDocIndex]]} 
+                  <DocViewer
+                    key={activeDocIndex}
+                    documents={[docViewerDocs[activeDocIndex]]}
                     pluginRenderers={DocViewerRenderers}
                     style={{ height: "100%", minHeight: "75vh", flexGrow: 1 }}
                     config={{
@@ -336,6 +341,10 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
                         disableHeader: true,
                         disableFileName: true,
                         retainURLParams: false
+                      },
+                      pdfZoom: {
+                        defaultZoom: 0.6,
+                        zoomJump: 0.1
                       }
                     }}
                   />

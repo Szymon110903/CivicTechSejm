@@ -33,13 +33,20 @@ Implemented a dedicated FastAPI router with 5 core analytical endpoints:
     *   Active MPs toggle (`active_only`).
 *   Implemented 5 intuitive sub-views: `ClubsOverview`, `ClubComparison`, `AgreementMatrix`, `ClubBehaviorSearch`, and `ClubDetailRebels`.
 
-### 5. Comprehensive Documentation
+### 5. Document Deduplication & On-The-Fly PDF Conversion
+*   **Backend Conversion**: Integrated `LibreOffice` (headless) into the backend Docker image to automatically convert `.doc` and `.docx` parliamentary prints to `.pdf` formats on-demand via the `/api/bills/documents/{id}/download` endpoint.
+*   **Deduplication**: Implemented logic in `document_service.py` (`sync_bill_documents`) to group files by their base name (ignoring extensions), prioritizing the PDF version to avoid duplicate entries for the exact same document.
+*   **React Doc Viewer Fixes**: Addressed a critical bug in `@cyntler/react-doc-viewer` where the MS Office Online Viewer failed to render local `.docx` files (showing a white screen). Fixed by forcing `.pdf` extension in the URI and `fileName` props, and explicitly passing `key={activeDocIndex}` to force a robust component remount upon tab changes.
+*   **Default Zoom**: Configured `react-doc-viewer` to start with a zoomed-out view (`defaultZoom: 0.6`) for better initial readability.
+
+### 6. Comprehensive Documentation
 *   Added `docs/club_analytics.md`: Full mathematical and methodological documentation of all analytical formulas (Cohesion, Alignment, Rebel Index) and use cases.
 *   Updated `docs/proxy.md`: Documented caching strategy and active MP filtering in the Proxy layer.
+*   Updated `docs/backend_overview.md` and `docs/frontend_api.md` with details regarding the new LibreOffice DOCX-to-PDF conversion pipeline and deduplication logic.
 
 ---
 
 ## Verification & Testing
 *   **Automated Tests**: Added complete unit test suite in `backend/tests/test_clubs_endpoints.py` covering all analytical endpoints, filtering logic, and edge cases (100% passing).
 *   **Frontend Build**: Verified production build using `npm run build` / `vite build` (compiled successfully with zero errors).
-*   **Manual Verification**: Verified UI responsiveness and filter synchronization across all 5 analytical views.
+*   **Manual Verification**: Verified UI responsiveness and filter synchronization across all analytical views. Tested DOCX-to-PDF conversion with `V10_1387-6.NK.docx` and confirmed successful rendering in the React PDF viewer.

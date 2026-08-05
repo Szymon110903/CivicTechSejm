@@ -35,9 +35,7 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
           throw new Error('Nie udało się pobrać dokumentów dla tego głosowania.');
         }
         const data = await response.json();
-        // Filtrujemy tylko pliki PDF, ignorujemy docx i inne
-        const pdfDocuments = data.filter(doc => doc.filename.toLowerCase().endsWith('.pdf'));
-        setDocuments(pdfDocuments);
+        setDocuments(data);
         setActiveDocIndex(0);
       } catch (err) {
         setDocError(err.message);
@@ -80,11 +78,10 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
   const abstainPercent = totalVotes > 0 ? ((abstainCount / totalVotes) * 100).toFixed(1) : '0';
 
   const docViewerDocs = documents.map(doc => {
-    const fileType = doc.filename.split('.').pop().toLowerCase();
     return {
       uri: `/api/bills/documents/${doc.id}/download`,
       fileName: doc.filename,
-      fileType: fileType
+      fileType: 'pdf' // Wymuszamy PDF, bo backend konwertuje wszystko do PDF
     };
   });
 

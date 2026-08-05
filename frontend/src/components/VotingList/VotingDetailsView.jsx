@@ -140,7 +140,7 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             <span className="text-muted">&bull;</span>
             <span className="fw-bold text-light fs-6">Głosowanie nr {voting_number}</span>
 
-            {documents.length > 0 && (
+            {!loadingDocs && (
               <button
                 className={`btn btn-sm ms-2 ms-md-4 d-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-pill shadow-sm transition-all ${activeTab === 'documents' ? 'btn-info text-dark' : 'btn-outline-info text-light'}`}
                 onClick={() => setActiveTab(activeTab === 'documents' ? 'details' : 'documents')}

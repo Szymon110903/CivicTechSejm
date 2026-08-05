@@ -8,8 +8,16 @@ const VotingDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // If we navigated here with state (e.g. from VotingCard in VotingList), use that first
-  const [votingData, setVotingData] = useState(location.state?.voting || null);
+  const [votingData, setVotingData] = useState(() => {
+    if (location.state?.voting) {
+      return {
+        ...location.state.voting,
+        sitting: location.state.sitting || location.state.voting.sitting,
+        date: location.state.date || location.state.voting.date
+      };
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(!votingData);
   const [error, setError] = useState(null);
 

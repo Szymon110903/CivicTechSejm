@@ -33,12 +33,32 @@ class DocumentService:
         attachments = print_data.get("attachments", [])
         synced_docs = []
         
+        # Deduplikacja po rdzeniu nazwy pliku z preferencją dla PDF
+        import os
+        attachments_dict = {}
+        for att in attachments:
+            base, ext = os.path.splitext(att)
+            ext = ext.lower()
+            if base not in attachments_dict:
+                attachments_dict[base] = []
+            attachments_dict[base].append((att, ext))
+            
+        unique_attachments = []
+        for base, files in attachments_dict.items():
+            pdfs = [f for f in files if f[1] == '.pdf']
+            if pdfs:
+                unique_attachments.append(pdfs[0][0])
+            else:
+                unique_attachments.append(files[0][0])
+        
         # Pobieramy istniejące dokumenty, żeby nie powielać
-        existing_docs = {doc.filename: doc for doc in bill.documents}
+        # Zmieniamy klucz na original_url, aby uniknąć problemu zmiany rozszerzenia podczas konwersji
+        existing_urls = {doc.original_url: doc for doc in bill.documents}
 
-        for attach_name in attachments:
-            if attach_name in existing_docs:
-                synced_docs.append(existing_docs[attach_name])
+        for attach_name in unique_attachments:
+            original_url = f"https://api.sejm.gov.pl/sejm/term{bill.term}/prints/{num}/{attach_name}"
+            if original_url in existing_urls:
+                synced_docs.append(existing_urls[original_url])
                 continue
                 
             # Wyciągamy rozszerzenie jako format
@@ -48,7 +68,7 @@ class DocumentService:
             new_doc = BillDocument(
                 bill_id=bill.id,
                 filename=attach_name,
-                original_url=f"https://api.sejm.gov.pl/sejm/term{bill.term}/prints/{num}/{attach_name}",
+                original_url=original_url,
                 format=format_ext,
                 version=1
             )
@@ -80,9 +100,69 @@ class DocumentService:
         db.add(audit)
         db.commit()
 
+        # Funkcja pomocnicza do konwersji
+        async def convert_to_pdf(local_file_path, document):
+            import asyncio
+            import subprocess
+            import logging
+            logger = logging.getLogger(__name__)
+            pdf_dir = os.path.dirname(local_file_path)
+            cmd = [
+                "libreoffice", "--headless", "--convert-to", "pdf",
+                local_file_path, "--outdir", pdf_dir
+            ]
+            try:
+                print(f"Running libreoffice cmd: {cmd}", flush=True)
+                result = await asyncio.to_thread(
+                    subprocess.run,
+                    cmd,
+                    check=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=120,
+                )
+                print(f"LibreOffice stdout: {result.stdout.decode()}", flush=True)
+                print(f"LibreOffice stderr: {result.stderr.decode()}", flush=True)
+                
+                base_path = os.path.splitext(local_file_path)[0]
+                pdf_path = base_path + ".pdf"
+                print(f"Checking for converted file at: {pdf_path}", flush=True)
+                
+                if os.path.exists(pdf_path):
+                    print("Converted file exists!", flush=True)
+                    async with aiofiles.open(pdf_path, "rb") as f:
+                        file_bytes = await f.read()
+                        
+                    document.local_path = pdf_path
+                    document.file_content = file_bytes
+                    document.filename = os.path.splitext(document.filename)[0] + ".pdf"
+                    document.format = "PDF"
+                    db.commit()
+                    
+                    try:
+                        os.remove(local_file_path)
+                    except OSError:
+                        pass
+                    return True
+                else:
+                    print(f"File {pdf_path} not found after conversion!", flush=True)
+            except Exception as e:
+                print(f"Exception during convert_to_pdf: {e}", flush=True)
+                if isinstance(e, subprocess.CalledProcessError):
+                    print(f"CalledProcessError stdout: {e.stdout.decode()}", flush=True)
+                    print(f"CalledProcessError stderr: {e.stderr.decode()}", flush=True)
+                logger.error(f"Failed to convert {local_file_path} to PDF: {e}")
+            return False
+
         # Sprawdzamy czy plik istnieje lokalnie
         if doc.local_path and os.path.exists(doc.local_path):
-            return doc
+            if doc.local_path.lower().endswith(('.doc', '.docx')):
+                # Został pobrany wcześniej, ale nie skonwertowany
+                success = await convert_to_pdf(doc.local_path, doc)
+                if success:
+                    return doc
+            else:
+                return doc
 
         # Pobieranie "on-demand" z API Sejmu
         bill = doc.bill
@@ -102,7 +182,13 @@ class DocumentService:
         async with aiofiles.open(local_path, "wb") as f:
             await f.write(file_bytes)
 
-        # Aktualizujemy rekord w bazie o ścieżkę lokalną i sam plik (jako BLOB)
+        # Konwersja DOCX/DOC do PDF
+        if doc.filename.lower().endswith(('.doc', '.docx')):
+            success = await convert_to_pdf(local_path, doc)
+            if success:
+                return doc
+
+        # Aktualizujemy rekord w bazie o ścieżkę lokalną i sam plik (jako BLOB) dla plików innych niż doc/docx (albo jeśli konwersja zawiodła)
         doc.local_path = local_path
         doc.file_content = file_bytes
         db.commit()

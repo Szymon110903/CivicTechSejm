@@ -38,7 +38,13 @@ backend/
 4.  Pobrane dane są transformowane, archiwizowane w bazie (lub na dysku, np. pliki PDF) i formatowane przy pomocy **Schematów Pydantic** (`app/schemas.py`).
 5.  Wynik w formacie JSON trafia z powrotem na Frontend.
 
-Dzięki takiemu podziałowi warstw frontend nie komunikuje się bezpośrednio z wolnym i skomplikowanym API Sejmu. Cały ciężar pobierania, parsowania, cache'owania i odpytywania bazy spoczywa na FastAPI.
+Cały ciężar pobierania, parsowania, cache'owania i odpytywania bazy spoczywa na FastAPI.
+
+## Deduplikacja i Konwersja Dokumentów
+
+System automatycznie zarządza i optymalizuje dokumenty pochodzące z serwerów Sejmu:
+*   **Deduplikacja:** Mechanizm pobierania dokumentów grupuje pliki powiązane z ustawami według ich unikalnych rdzeni nazw, eliminując powielanie (np. preferuje pliki PDF nad DOCX z tą samą merytoryczną zawartością).
+*   **Konwersja On-The-Fly:** Kontener z backendem posiada zainstalowany wbudowany silnik bezgłowy (headless) **LibreOffice**. Gdy aplikacja webowa prosi o pobranie dokumentu udostępnianego przez Sejm wyłącznie w formacie tekstowym (`.doc` lub `.docx`), backend pobiera go do archiwum i przed wysłaniem na frontend automatycznie renderuje z niego dokument PDF. Pozwala to na uniknięcie łamania zabezpieczeń natywnych przeglądarek (np. wymogów zewnętrznych komponentów do podglądu formatów Microsoftu). Zmieniony plik PDF zapisywany jest również w bazie danych na przyszłość.
 
 ## Zadania w Tle (Background Sync)
 

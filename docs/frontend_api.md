@@ -48,7 +48,8 @@ Endpointy pozwalające zarządzać projektami oraz powiązanymi plikami (np. pe�
     *   Wymusza zaktualizowanie z Sejm API listy załączników dla danego projektu (przydatne po dodaniu nowego projektu).
 *   `GET /api/bills/documents/{document_id}/download`
     *   **Zwraca:** Plik binarny z odpowiednim typem MIME (np. `application/pdf`, `text/html`). Jeśli pliku nie było na lokalnym serwerze – backend pobiera go z serwerów Sejmu na żądanie (On-Demand) i zapisuje w archiwum, prowadząc przy okazji logi audytu.
-    *   **Zastosowanie:** Ten adres URL frontend umieszcza np. w znaczniku `<a>` jako przycisk pobierania, w `<iframe src="...">` do podglądu dokumentu PDF bezpośrednio na podstronie ustawy.
+    *   **Konwersja:** Pliki w starych formatach edytorów tekstu (np. `.docx`, `.doc`) są automatycznie konwertowane w locie (na backendzie) do ustandaryzowanego formatu PDF (przy użyciu silnika LibreOffice). Gwarantuje to jednolity podgląd na front-endzie. Pliki są również deduplikowane, aby uniknąć przesyłania identycznych merytorycznie plików o różnych formatach.
+    *   **Zastosowanie:** Ten adres URL frontend umieszcza np. w znaczniku `<a>` jako przycisk pobierania, lub komponentu podglądu (np. `react-doc-viewer`) PDF bezpośrednio na podstronie ustawy.
 
 ### 4. Komisje Sejmowe (`/api/committees`)
 Endpointy pozwalające na pobieranie danych o organach Sejmu.

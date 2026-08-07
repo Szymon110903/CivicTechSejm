@@ -79,6 +79,7 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
   const abstainPercent = totalVotes > 0 ? ((abstainCount / totalVotes) * 100).toFixed(1) : '0';
 
   const docViewerDocs = documents.map(doc => {
+    const safeFileName = doc.filename.replace(/\.docx?$/i, '.pdf');
     return {
       uri: `/api/bills/documents/${doc.id}/download?name=${encodeURIComponent(safeFileName)}`,
       fileName: safeFileName,

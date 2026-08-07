@@ -22,6 +22,8 @@ services:
     depends_on:
       - db
       - redis
+    volumes:
+      - archive_data:/app/data/archive
 
   worker:
     build:

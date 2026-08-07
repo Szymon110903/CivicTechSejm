@@ -30,7 +30,7 @@ def fixture_client(db_session):
         yield test_client
     app.dependency_overrides.clear()
 
-@patch("app.routers.bills.generate_bill_summary_task.delay")
+@patch("app.worker.tasks.generate_bill_summary_task.delay")
 def test_generate_summary_endpoint_trigger(mock_delay, client, db_session):
     """Testuje czy POST uderza do Celery, gdy bill_id istnieje"""
     bill = Bill(id=999, term=10, title="Ustawą testowa endpointu")

@@ -62,8 +62,8 @@ def generate_bill_summary(document_text: str) -> dict:
          }
          
     try:
-        # Gemini 1.5 Flash jest darmowe i ma bardzo duże okno kontekstowe (1M tokenów)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Korzystamy z najnowszego modelu z rodziny Flash, który jest optymalny do długich tekstów
+        model = genai.GenerativeModel('gemini-flash-latest')
         
         prompt = build_prompt(document_text)
         response = model.generate_content(prompt)

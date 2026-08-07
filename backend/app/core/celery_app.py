@@ -11,7 +11,7 @@ celery_app = Celery(
 )
 
 # Wymusza szukanie tasków w naszym projekcie
-celery_app.autodiscover_tasks(["app.worker.tasks"])
+celery_app.autodiscover_tasks(["app.worker"])
 
 celery_app.conf.update(
     task_serializer="json",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Users, FileText, CheckCircle2, XCircle, AlertCircle, Download, ShieldCheck } from 'lucide-react';
 import DocViewer, { DocViewerRenderers } from '@cyntler/react-doc-viewer';
 import '@cyntler/react-doc-viewer/dist/index.css';
+import AiSummaryTab from './AiSummaryTab';
 import './VotingDetailsView.css';
 
 const VotingDetailsView = ({ voting, onClose, context }) => {
@@ -78,6 +79,7 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
   const abstainPercent = totalVotes > 0 ? ((abstainCount / totalVotes) * 100).toFixed(1) : '0';
 
   const docViewerDocs = documents.map(doc => {
+    const safeFileName = doc.filename.replace(/\.docx?$/i, '.pdf');
     return {
       uri: `/api/bills/documents/${doc.id}/download?name=${encodeURIComponent(safeFileName)}`,
       fileName: safeFileName,
@@ -140,13 +142,22 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             <span className="fw-bold text-light fs-6">Głosowanie nr {voting_number}</span>
 
             {!loadingDocs && (
-              <button
-                className={`btn btn-sm ms-2 ms-md-4 d-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-pill shadow-sm transition-all ${activeTab === 'documents' ? 'btn-info text-dark' : 'btn-outline-info text-light'}`}
-                onClick={() => setActiveTab(activeTab === 'documents' ? 'details' : 'documents')}
-              >
-                <FileText size={16} />
-                {activeTab === 'documents' ? 'Wróć do statystyk' : 'Podgląd PDF'}
-              </button>
+              <>
+                <button
+                  className={`btn btn-sm ms-2 ms-md-4 d-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-pill shadow-sm transition-all ${activeTab === 'documents' ? 'btn-info text-dark' : 'btn-outline-info text-light'}`}
+                  onClick={() => setActiveTab(activeTab === 'documents' ? 'details' : 'documents')}
+                >
+                  <FileText size={16} />
+                  {activeTab === 'documents' ? 'Wróć do statystyk' : 'Podgląd PDF'}
+                </button>
+                <button
+                  className={`btn btn-sm ms-2 d-flex align-items-center gap-2 fw-bold px-3 py-2 rounded-pill shadow-sm transition-all ${activeTab === 'ai' ? 'btn-warning text-dark' : 'btn-outline-warning text-light'}`}
+                  onClick={() => setActiveTab(activeTab === 'ai' ? 'details' : 'ai')}
+                >
+                  <span className="fs-6">✨</span> 
+                  {activeTab === 'ai' ? 'Wróć do statystyk' : 'AI Podsumowanie'}
+                </button>
+              </>
             )}
           </div>
 
@@ -272,6 +283,9 @@ const VotingDetailsView = ({ voting, onClose, context }) => {
             </div>
           )}
         </>
+      ) : activeTab === 'ai' ? (
+        /* AI Summary Tab */
+        <AiSummaryTab votingId={voting.id} />
       ) : (
         /* Documents Section (Druki sejmowe) - FULL SCREEN TAB */
         <div className="card shadow-sm mb-4 border border-secondary-subtle bg-body-tertiary flex-grow-1 d-flex flex-column" style={{ minHeight: "80vh" }}>

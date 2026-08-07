@@ -8,3 +8,7 @@ pydantic
 python-dotenv
 alembic
 aiofiles
+celery
+redis
+google-generativeai
+pdfplumber

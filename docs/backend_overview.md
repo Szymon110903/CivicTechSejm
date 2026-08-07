@@ -50,3 +50,20 @@ System automatycznie zarządza i optymalizuje dokumenty pochodzące z serwerów 
 
 Aby zachować bazę w aktualności, backend wykorzystuje `asyncio` do cyklicznego sprawdzania nowości bez obciążania zapytań klienckich. Przykładem jest:
 *   **Synchronizacja posiedzeń:** Raz na 24 godziny funkcja pobiera listę posiedzeń z Sejmu i auto-importuje te, których brakuje lokalnie (`app/services/background_tasks.py`). Mechanizm ten spina się bezpośrednio w cyklu życia (Lifespan) serwera FastAPI.
+
+## Asynchroniczne przetwarzanie AI (Celery + Redis)
+
+W aplikacji dodano zaawansowany system kolejkowania **Celery** oparty na brokerze **Redis**. Celery jest odpowiedzialne za odciążenie głównego serwera FastAPI z ciężkich, długotrwałych zadań, takich jak komunikacja z zewnętrznymi modelami LLM (np. **Google Gemini API**).
+
+**Dlaczego zostało to dodane?**
+Generowanie podsumowań za pomocą modeli LLM (np. analizowanie setek stron OSR) może zająć od kilkunastu sekund do minuty. Wykonanie takiego zapytania synchronicznie (bezpośrednio w procesie API) zablokowałoby obsługę innych żądań HTTP i mogło skutkować błędem przekroczenia czasu oczekiwania (`Timeout`). Rozwiązaniem jest model asynchroniczny (Fire-and-Forget / Polling).
+
+**Jak to działa w CivicTechSejm?**
+1. **Frontend** żąda generacji podsumowania dla ustawy (np. przez `POST /bills/{id}/generate-summary`).
+2. **FastAPI** przyjmuje żądanie i deleguje (odkłada) je do brokera **Redis** jako nowe zadanie do wykonania, po czym od razu zwraca odpowiedź o jego przyjęciu (status `pending`).
+3. Osobny kontener w tle (tzw. **Celery Worker**) wykonuje zadanie `generate_bill_summary_task`:
+   * **Deduplikacja**: Sprawdza w bazie czy `AnalysisResult` nie ma już gotowej analizy.
+   * **Ekstrakcja PDF**: Znajduje plik z "osr" lub "uzasadnienie" w nazwie i wyciąga z niego tekst przy pomocy biblioteki `pdfplumber`.
+   * **Inżynieria Promptów**: Wstrzykuje tekst do ustrukturyzowanego promptu wymuszającego odpowiedź w formacie czystego JSON i zachowanie obiektywnego, analitycznego tonu.
+   * Zapisuje pobrany JSON z powrotem do pola `raw_analysis_data` w tabeli `AnalysisResult`.
+4. **Frontend** cyklicznie odpytuje endpoint ustawy, który natychmiastowo zwraca zapisane już podsumowanie, zapobiegając nadmiernym rachunkom za API.

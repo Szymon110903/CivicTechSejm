@@ -311,3 +311,62 @@ async def get_voting_documents(
         } for doc in synced
     ]
 
+async def _get_bill_for_voting(voting_id: int, db: Session, client) -> Bill:
+    """Helper method to get bill for a voting."""
+    voting = db.query(Voting).filter(Voting.id == voting_id).first()
+    if not voting:
+        raise HTTPException(status_code=404, detail="Voting not found")
+
+    text_to_search = (voting.title or "") + " " + (voting.topic or "") + " " + (voting.description or "")
+    match = re.search(r'druk[ui]?\s*(?:nr)?\s*(\d+)', text_to_search, re.IGNORECASE)
+    
+    if not match:
+        raise HTTPException(status_code=404, detail="No bill found for this voting")
+        
+    print_num = match.group(1)
+    term = voting.day.proceeding.term
+    
+    bill = db.query(Bill).filter(Bill.term == term, Bill.print_number == print_num).first()
+    if not bill:
+        # Create a dummy bill to hold documents
+        try:
+            print_data = await client.get_print(term=term, num=print_num)
+            bill = Bill(
+                term=term,
+                print_number=print_num,
+                title=print_data.get("title", f"Druk nr {print_num}")
+            )
+            db.add(bill)
+            db.commit()
+            db.refresh(bill)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Failed to fetch print from Sejm API: {str(e)}")
+            
+    return bill
+
+@router.get("/{voting_id}/summary")
+async def get_voting_summary(
+    voting_id: int, 
+    db: Session = Depends(get_db),
+    client = Depends(get_sejm_client)
+):
+    """
+    Zwraca podsumowanie AI dla ustawy powiązanej z głosowaniem.
+    """
+    from .bills import get_summary
+    bill = await _get_bill_for_voting(voting_id, db, client)
+    return await get_summary(bill.id, db=db)
+
+@router.post("/{voting_id}/generate-summary")
+async def generate_voting_summary(
+    voting_id: int, 
+    db: Session = Depends(get_db),
+    client = Depends(get_sejm_client)
+):
+    """
+    Zleca wygenerowanie podsumowania AI dla ustawy powiązanej z głosowaniem.
+    """
+    from .bills import generate_summary
+    bill = await _get_bill_for_voting(voting_id, db, client)
+    return await generate_summary(bill.id, db=db)
+

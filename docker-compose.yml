@@ -17,8 +17,30 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/civictechsejm
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
     depends_on:
       - db
+      - redis
+    volumes:
+      - archive_data:/app/data/archive
+
+  worker:
+    build:
+      context: ./backend
+    command: celery -A app.core.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/civictechsejm
+      - REDIS_URL=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   frontend:
     build:
@@ -30,3 +52,4 @@ services:
 
 volumes:
   postgres_data:
+  archive_data:

@@ -42,8 +42,8 @@ def generate_bill_summary_task(self, bill_id: int):
             return {"status": "error", "message": "No valid PDF document found for bill"}
 
         if not os.path.exists(target_doc.local_path):
-             logger.error(f"Plik fizycznie nie istnieje na dysku: {target_doc.local_path}")
-             return {"status": "error", "message": "File missing from disk"}
+            logger.error(f"Plik fizycznie nie istnieje na dysku: {target_doc.local_path}")
+            return {"status": "error", "message": "File missing from disk"}
 
         # 3. Ekstrakcja tekstu z PDF
         logger.info(f"Ekstrakcja tekstu z pliku: {target_doc.filename}")

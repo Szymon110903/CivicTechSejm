@@ -67,3 +67,43 @@ async def download_document(document_id: int, request: Request, db: Session = De
     else:
         raise HTTPException(status_code=404, detail="Document content not available")
 
+@router.post("/{bill_id}/generate-summary")
+async def generate_summary(bill_id: int, db: Session = Depends(get_db)):
+    """
+    Zleca asynchroniczne wygenerowanie podsumowania AI dla danej ustawy.
+    """
+    from ..models.bill import Bill
+    from ..models.analysis_result import AnalysisResult
+    from ..worker.tasks import generate_bill_summary_task
+
+    bill = db.query(Bill).filter(Bill.id == bill_id).first()
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+
+    # Sprawdzenie deduplikacji od razu w API
+    existing_analysis = db.query(AnalysisResult).filter(AnalysisResult.bill_id == bill_id).first()
+    if existing_analysis and existing_analysis.raw_analysis_data:
+        return {"status": "success", "message": "Summary already exists"}
+
+    # Wysłanie zadania do brokera Celery (Redis)
+    generate_bill_summary_task.delay(bill_id)
+    return {"status": "pending", "message": "Summary generation started in background"}
+
+@router.get("/{bill_id}/summary")
+async def get_summary(bill_id: int, db: Session = Depends(get_db)):
+    """
+    Zwraca wygenerowane podsumowanie AI dla danej ustawy, jeśli istnieje.
+    """
+    from ..models.analysis_result import AnalysisResult
+    
+    analysis = db.query(AnalysisResult).filter(AnalysisResult.bill_id == bill_id).first()
+    if not analysis or not analysis.raw_analysis_data:
+        # Można sprawdzić np. w Redis czy task jest wciąż aktywny, 
+        # ale dla uproszczenia zwracamy status pending, jeśli nie ma danych w bazie
+        return {"status": "pending", "data": None}
+        
+    return {
+        "status": "success",
+        "data": analysis.raw_analysis_data
+    }
+

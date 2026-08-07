@@ -52,13 +52,13 @@ Zwróć TYLKO czysty obiekt JSON.
 def generate_bill_summary(document_text: str) -> dict:
     """Wysyła tekst do Gemini i zwraca sparsowany słownik (JSON)."""
     if not GEMINI_API_KEY:
-         logger.warning("Brak GEMINI_API_KEY. Używam mockowanej odpowiedzi LLM.")
-         return {
-             "summary": "Mock: Ustawienie środowiska nie zawiera GEMINI_API_KEY.",
-             "affected_groups": ["Mock Group 1"],
-             "changes": "Mocked changes.",
-             "consequences": "Mocked consequences."
-         }
+        logger.warning("Brak GEMINI_API_KEY. Używam mockowanej odpowiedzi LLM.")
+        return {
+            "summary": "Mock: Ustawienie środowiska nie zawiera GEMINI_API_KEY.",
+            "affected_groups": ["Mock Group 1"],
+            "changes": "Mocked changes.",
+            "consequences": "Mocked consequences."
+        }
          
     try:
         # Korzystamy z najnowszego modelu z rodziny Flash, który jest optymalny do długich tekstów
